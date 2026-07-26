@@ -39,6 +39,14 @@ read the entire library into context.
 
 Direct user and runtime instructions take precedence over project skills.
 
+## Documentation Language
+
+- 新建或实质性修订的项目设计、规格、实施计划、进度和交接文档默认使用简体中文。
+- C# 类型名、命令名、字段名、文件路径、配置键和外部工具名称保留英文。
+- 面向非程序协作者的文档必须用中文解释专业概念，不要求读者理解代码。
+- 第三方许可证、来源记录和必须保留原文的外部资料不强制翻译。
+- 中英文项目决策冲突时，以仓库中已确认的中文文档为准。
+
 ## Architecture Boundaries
 
 | Module | Allowed dependency direction | Project invariant |

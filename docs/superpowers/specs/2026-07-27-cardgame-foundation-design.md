@@ -1,109 +1,99 @@
-# CardGame Project Foundation and Narrative Roguelike Design
+# CardGame 项目地基与叙事肉鸽卡牌设计
 
-**Status:** Approved in conversation; pending repository review  
-**Date:** 2026-07-27  
-**Target repository:** `D:\Unity Project\CardGame`  
-**Reference framework:** Existing RazorFramework source and Harness configuration  
+**状态：** 对话中已确认，等待仓库文档复审
+**日期：** 2026-07-27
+**目标仓库：** `D:\Unity Project\CardGame`
+**参考框架：** 现有 RazorFramework 源码与 Harness 配置
 
-## 1. Purpose
+## 1. 文档目的
 
-This specification defines the maintainable foundation for CardGame:
+本文定义 CardGame 的可维护项目地基：
 
-- Turn `CardGame` into the real Unity project rather than keeping a separate
-  framework-only checkout.
-- Migrate only required Unity project files from `D:\Unity Project\Temp`.
-- Fully review and refactor the existing RazorFramework before game systems
-  depend on it.
-- Establish a Slay the Spire-style map and deck-building loop with substantially
-  deeper narrative progression.
-- Provide non-programmer authoring contracts for narrative collaborators.
-- Provide a deterministic simulation and AI-assisted balancing workflow for a
-  team without a dedicated numerical designer.
-- Persist decisions, evidence, and next steps according to the repository
-  Harness rules.
+- 让 `CardGame` 成为实际 Unity 项目，不再维持独立的框架项目副本。
+- 从 `D:\Unity Project\Temp` 迁移必要的 Unity 项目文件。
+- 在游戏系统依赖 RazorFramework 之前，对其进行全面审计和重构。
+- 建立类似《杀戮尖塔》的地图与牌组构筑循环，并加入更深入的剧情推进。
+- 为不懂代码的文案协作者提供内容规范和生产流程。
+- 为缺少专职数值策划的团队建立确定性模拟与 AI 辅助调优流程。
+- 按照 Harness 原则，将决策、证据和下一步持久化到仓库。
 
-Maintainability takes precedence over preserving existing framework APIs or
-minimizing the initial refactor.
+维护性优先于保留旧框架 API，也优先于降低初期重构成本。
 
-## 2. Confirmed Decisions
+## 2. 文档语言规范
 
-1. RazorFramework serves CardGame only; it is not maintained as an independent
-   Unity package.
-2. Framework source will live under `Assets/Plugins/RazorFramework/`.
-3. Existing public APIs may be broken or removed.
-4. The framework will be comprehensively audited and refactored before it
-   becomes the base of game features.
-5. The first delivery is a verified project foundation, not a complete combat
-   or map implementation.
-6. The campaign uses a two-layer narrative map: a branching roguelike route
-   combined with persistent narrative state and guaranteed story anchors.
-7. Combat uses one protagonist deck plus non-targetable companions.
-8. All damage passes through a deterministic and inspectable settlement
-   pipeline.
-9. Narrative collaborators author structured tables and Markdown, not code or
-   Unity object graphs.
-10. Balance uses deterministic simulation, constrained optimization, and AI
-    analysis. AI does not directly publish production values.
-11. Design, implementation state, verification evidence, and handoff state must
-    be stored in the repository.
+- 项目设计、协作规范、实施计划、进度和交接文档默认使用中文。
+- C# 类型名、命令名、字段名、路径、配置键和外部工具名称保留英文。
+- 面向非程序协作者的文档必须使用中文解释专业概念，不要求读者理解代码。
+- 英文原始资料可以作为参考链接，但不能取代中文的项目结论。
+- 若中英文版本同时存在，中文版本是项目决策的唯一真实来源。
 
-## 3. Scope
+## 3. 已确认决策
 
-### 3.1 Foundation milestone
+1. RazorFramework 只服务 CardGame，不作为独立 Unity Package 对外维护。
+2. 框架源码放入 `Assets/Plugins/RazorFramework/`。
+3. 允许破坏或删除现有公开 API。
+4. 在游戏功能依赖框架之前，对框架进行系统性审计和重构。
+5. 第一阶段交付“可验证的项目地基”，不交付完整地图或战斗内容。
+6. 地图采用“双层叙事地图”：分叉肉鸽路线叠加持久化剧情状态和主线锚点。
+7. 战斗采用单主角牌组和不可被直接攻击的同行者。
+8. 所有伤害必须经过确定、可追踪的伤害结算管线。
+9. 文案协作者通过结构表和 Markdown 写作，不编辑代码或 Unity 对象关系。
+10. 数值平衡采用确定性模拟、约束优化和 AI 分析，不允许 AI 直接发布正式数值。
+11. 设计、实施状态、验证证据和交接信息必须保存在仓库中。
 
-The first milestone includes:
+## 4. 范围
 
-- Unity project migration and cleanup.
-- Repository and assembly layout.
-- Framework API redesign and automated tests.
-- A minimal Bootstrap scene and application lifecycle.
-- Content-source contracts and validation entrypoints.
-- Pure C# foundations for deterministic rules, state, save versions, and
-  reproducible random number generation.
-- Harness updates for the new project layout.
+### 4.1 项目地基阶段
 
-### 3.2 Deferred work
+第一阶段包括：
 
-The following are intentionally deferred to later vertical slices:
+- Unity 项目迁移和模板清理。
+- 仓库目录和程序集布局。
+- 框架 API 重新设计及自动化测试。
+- 最小 Bootstrap 场景和应用生命周期。
+- 内容源文件契约和验证入口。
+- 纯 C# 的确定性规则、状态、存档版本和随机数基础。
+- 适配新项目布局的 Harness。
 
-- A complete card set, enemy roster, act, or campaign.
-- Multi-character combat with separate health and turns.
-- Real-time combat, speed bars, multiplayer, or competitive modes.
-- A custom visual story editor.
-- Reinforcement-learning infrastructure.
-- AI-generated content or values being published without validation.
-- Final theme, cast, setting, plot, and production numerical values.
+### 4.2 暂不实施
 
-## 4. Unity Project Migration
+以下内容推迟到后续可玩纵切：
 
-`CardGame` becomes the Unity project root.
+- 完整卡牌池、敌人池、章节或战役。
+- 拥有独立生命值和回合的多角色战斗。
+- 实时战斗、速度条、联机或竞技模式。
+- 完整的可视化剧情编辑器。
+- 强化学习基础设施。
+- 未经验证便发布的 AI 生成内容或数值。
+- 最终世界观、角色阵容、完整主线和生产级数值。
 
-Migrate from `D:\Unity Project\Temp`:
+## 5. Unity 项目迁移
 
-- `Assets/` content that is required by the selected 2D URP template, preserving
-  `.meta` files.
-- `Packages/manifest.json`.
-- `Packages/packages-lock.json`.
-- `ProjectSettings/`.
+`CardGame` 成为 Unity 项目根目录。
 
-Do not migrate:
+从 `D:\Unity Project\Temp` 迁移：
+
+- 2D URP 模板所需的 `Assets/` 内容，并保留对应 `.meta` 文件。
+- `Packages/manifest.json`。
+- `Packages/packages-lock.json`。
+- `ProjectSettings/`。
+
+不迁移：
 
 - `Library/`
 - `Temp/`
 - `Logs/`
 - `UserSettings/`
 - `.vscode/`
-- generated `.sln`, `.slnx`, or `.csproj` files
+- 自动生成的 `.sln`、`.slnx` 和 `.csproj`
 
-The source template is Unity `6000.3.10f1` with URP `17.3.0`, Input System
-`1.18.0`, and Unity Test Framework `1.6.0`. Package dependencies must be reviewed
-after migration; unused template packages are removed deliberately rather than
-copied indefinitely.
+源模板使用 Unity `6000.3.10f1`、URP `17.3.0`、Input System `1.18.0` 和
+Unity Test Framework `1.6.0`。迁移后逐项审查依赖，不长期保留未使用的模板包。
 
-The template `SampleScene` becomes a minimal `Bootstrap` scene. The template
-first-person action map is not treated as the final card-game input contract.
+模板 `SampleScene` 改造为最小 `Bootstrap` 场景。模板自带的第一人称输入映射
+不作为卡牌游戏的正式输入契约。
 
-## 5. Repository Layout
+## 6. 仓库布局
 
 ```text
 CardGame/
@@ -141,47 +131,39 @@ CardGame/
 └─ session-handoff.md
 ```
 
-`ContentSource` is the editable content source of truth.
-`Assets/CardGame/Content/Generated` is generated and must not be edited by hand.
+`ContentSource` 是可编辑内容的唯一真实来源。
+`Assets/CardGame/Content/Generated` 由工具生成，禁止手工编辑。
 
-## 6. Architecture and Dependency Rules
+## 7. 架构与依赖规则
 
-### 6.1 Framework target modules
+### 7.1 框架目标模块
 
-The refactored framework is reduced to explicit responsibilities:
+重构后的框架只保留职责明确的模块：
 
-- **Core:** identifiers, deterministic time/random abstractions, result types,
-  and other minimal BCL-only primitives.
-- **DI:** registration, scopes, construction, and disposal without a
-  `UnityEngine` dependency.
-- **Events:** strongly typed messages and lifecycle-safe subscriptions.
-- **Lifecycle:** deterministic initialization, start, pause, resume, and
-  shutdown ordering.
-- **Presentation:** pure C# observable state and commands, separated from Unity
-  binding code.
-- **Unity Integration:** MonoBehaviour adapters, scene bootstrapping, Input
-  System adapters, and resource-loading adapters.
+- **Core：** 标识符、确定性时间与随机数抽象、结果类型及最小 BCL 基础类型。
+- **DI：** 注册、作用域、构造和释放，不依赖 `UnityEngine`。
+- **Events：** 强类型消息和生命周期安全的订阅。
+- **Lifecycle：** 确定的初始化、启动、暂停、恢复和关闭顺序。
+- **Presentation：** 纯 C# 可观察状态与命令；Unity 绑定独立放置。
+- **Unity Integration：** MonoBehaviour、场景启动、Input System 和资源加载适配。
 
-Existing implementations are requirements evidence, not compatibility
-constraints. Each module must justify its continued existence through an
-immediate CardGame use case and tests.
+旧实现只作为需求证据，不构成兼容约束。每个模块只有在 CardGame 有直接用途且
+存在测试时才保留。
 
-### 6.2 Game layers
+### 7.2 游戏分层
 
-- **Domain:** pure C# card, battle, map, narrative, and progression rules.
-- **Application:** use cases and orchestration over Domain and framework
-  abstractions.
-- **Infrastructure:** persistence, content loading, telemetry, and Unity-facing
-  implementations.
-- **Presentation:** Unity scenes, UI, animation, audio, and view binding.
+- **Domain：** 纯 C# 的卡牌、战斗、地图、剧情和成长规则。
+- **Application：** 用例，以及对 Domain 和框架抽象的流程编排。
+- **Infrastructure：** 存档、内容加载、遥测和 Unity 相关实现。
+- **Presentation：** Unity 场景、UI、动画、音频和视图绑定。
 
-### 6.3 Allowed dependency direction
+### 7.3 依赖方向
 
 ```text
-Unity and Input System
+Unity 与 Input System
         |
         v
-RazorFramework.Unity ------> RazorFramework pure modules
+RazorFramework.Unity ------> RazorFramework 纯 C# 模块
         ^                              ^
         |                              |
 CardGame.Presentation ---> CardGame.Application ---> CardGame.Domain
@@ -190,132 +172,118 @@ CardGame.Presentation ---> CardGame.Application ---> CardGame.Domain
 CardGame.Infrastructure ----------+
 ```
 
-Rules:
+约束：
 
-- Domain does not reference Unity, concrete UI, resource systems, or save
-  implementations.
-- Game assemblies may reference framework abstractions.
-- Framework assemblies never reference CardGame.
-- Assembly Definition files enforce the dependency graph.
-- Unity object liveness checks belong in Unity adapters, never in pure DI.
+- Domain 不引用 Unity、具体 UI、资源系统或存档实现。
+- 游戏程序集可以依赖框架抽象。
+- 框架程序集不得引用 CardGame。
+- 使用 Assembly Definition 强制依赖图。
+- Unity 对象存活判断只能放在 Unity 适配层，不能出现在纯 DI 中。
 
-## 7. Roguelike and Narrative Structure
+## 8. 肉鸽循环与叙事结构
 
-### 7.1 Run loop
+### 8.1 单局循环
 
-A run contains three acts. An initial target is approximately 12–15 floors per
-act, subject to later simulation and playtesting.
+一局由三个章节构成。初始目标为每章约 12–15 层，最终数量由模拟和试玩决定。
 
-Node categories:
+节点类型：
 
-- normal combat
-- elite combat
-- rest
-- shop
-- short event
-- archive or fragment
-- anomaly or condition node
-- main-story anchor
-- boss
+- 普通战斗
+- 精英战斗
+- 休整
+- 商店
+- 短事件
+- 档案或碎片
+- 异常或条件节点
+- 主线锚点
+- 首领
 
-Rewards modify the deck, relic inventory, resources, companion state, and
-narrative state. The boss resolves the act conflict and advances the story
-state.
+节点奖励可以改变牌组、遗物、资源、同行者状态和剧情状态。章节首领解决当前冲突
+并推进剧情阶段。
 
-### 7.2 Two-layer narrative map
+### 8.2 双层叙事地图
 
-The visible layer is a branching, directed route graph that supports risk and
-reward planning. The narrative layer is a persistent state machine that
-controls story anchors, conditional nodes, fragments, relationship changes,
-and cross-run variations.
+表层是支持风险与收益规划的有向分叉路线。深层是持久化剧情状态机，控制主线锚点、
+条件节点、碎片、人物关系和跨局变化。
 
-The generator places required main-story anchors before filling normal nodes.
-Necessary main story must not be hidden behind random generation. Complex
-conditions are reserved for optional branches, alternate resolutions, and
-hidden endings.
+地图生成器先放置必须可达的主线锚点，再填充普通节点。必要主线不能被随机生成隐藏；
+复杂条件只用于可选分支、不同解决方式和隐藏结局。
 
-### 7.3 Narrative content levels
+### 8.3 三层剧情内容
 
-1. **Fragment text:** short environmental echoes, records, item descriptions,
-   or internal monologue attached to ordinary map interactions.
-2. **Conditional events:** choices unlocked by deck, relic, health, companion,
-   prior choice, fragment, relationship, or meta-progression state.
-3. **Main-story scenes:** longer dialogue and staging at anchors, bosses, or
-   strict condition nodes, with outcomes that affect the current run.
+1. **碎片文本：** 附着在普通地图交互上的环境残响、档案、物品描述或内心独白。
+2. **条件事件：** 根据牌组、遗物、生命值、同行者、先前选择、碎片、关系或局外进度触发。
+3. **主线场景：** 位于剧情锚点、首领前后或严格条件节点，允许较长对白、演出和选择。
 
-Previously read long scenes support summaries and skipping. All discovered
-content enters an archive organized by timeline, character, and location.
+已读长剧情提供摘要和跳过功能。发现的内容进入局外档案，可按时间线、人物和地点查看。
 
-### 7.4 Narrative state
+### 8.4 剧情状态
 
-Narrative state includes:
+剧情状态包括：
 
-- chapter and main-story stage
-- current-run and persistent choices
-- discovered fragments
-- typed condition tags and counters
-- relationship states
-- unlocked nodes and endings
-- active world rules or anomalies
+- 章节和主线阶段
+- 本局选择和长期选择
+- 已发现碎片
+- 有类型的条件标签与计数器
+- 人物关系状态
+- 已解锁节点和结局
+- 当前世界规则或异常
 
-Map, battle, and narrative systems exchange explicit commands and results
-instead of mutating one another's internal state.
+地图、战斗和剧情通过明确命令与结果交换状态，不能直接修改彼此内部数据。
 
-## 8. Combat Model
+## 9. 战斗模型
 
-### 8.1 Core loop
+### 9.1 基础循环
 
-Combat is turn-based with visible enemy intent.
+战斗采用可见敌方意图的回合制模式。
 
-Initial configurable baselines:
+初始可配置基线：
 
-- three energy per player turn
-- five cards drawn per player turn
-- block normally expires at the next player-turn start
-- deterministic reshuffling using run random state
+- 玩家回合拥有 3 点能量。
+- 玩家回合抽 5 张牌。
+- 格挡通常在下一玩家回合开始时清除。
+- 弃牌堆耗尽后使用本局确定性随机状态洗牌。
 
-These are starting hypotheses, not production balance guarantees.
+这些数值只是初始假设，不是正式平衡结论。
 
-Combat phases:
+战斗阶段：
 
-1. setup
-2. player-turn start
-3. player actions
-4. enemy turn
-5. round end
-6. victory or defeat
+1. 准备
+2. 玩家回合开始
+3. 玩家行动
+4. 敌方回合
+5. 回合结束
+6. 胜利或失败
 
-### 8.2 Cards and effects
+### 9.2 卡牌与效果
 
-Card categories:
+卡牌类别：
 
-- attack
-- skill
-- power
-- status
-- curse
-- temporary narrative card
+- 攻击
+- 技能
+- 能力
+- 状态
+- 诅咒
+- 临时剧情牌
 
-Cards compose reusable effects rather than requiring one C# class per card.
-Initial effect vocabulary includes:
+卡牌组合可复用效果，不为每张卡牌创建一个 C# 类。初始效果词汇包括：
 
-- deal damage
-- gain block
-- draw cards
-- apply status
-- change energy
-- move cards between zones
-- repeat conditionally
-- select targets
-- create temporary cards
-- change companion charge
+- 造成伤害
+- 获得格挡
+- 抽牌
+- 施加状态
+- 改变能量
+- 在区域之间移动卡牌
+- 按条件重复
+- 选择目标
+- 创建临时卡牌
+- 改变同行者充能
 
-New code-level mechanics are added only when the effect vocabulary cannot
-express a required rule safely.
+只有现有效果词汇无法安全表达需求时，才新增代码级机制。
 
-### 8.3 Commands and execution
+### 9.3 命令与执行
 
-Player decisions become explicit commands:
+玩家决策转换为明确命令：
 
 - `PlayCard`
 - `EndTurn`
@@ -323,306 +291,273 @@ Player decisions become explicit commands:
 - `ChooseTarget`
 - `ChooseGeneratedCard`
 
-Commands produce ordered effects and immutable result records. Presentation
-reads results and plays visuals; it does not determine game outcomes.
-
-This model must support Unity presentation, headless simulation, deterministic
-replay, save/resume, and inspectable error reports.
+命令生成有序效果和不可变结果。表现层读取结果并播放视觉效果，不决定游戏结果。
 
-## 9. Companion Model
+同一规则模型必须支持 Unity 表现、无界面模拟、确定性重放、存档恢复和可追踪错误报告。
 
-The protagonist owns the deck and is the only standard player combatant.
-Companions are not independently targetable.
+## 10. 同行者系统
 
-Each companion may provide:
+主角拥有牌组，并且是标准战斗中唯一的玩家战斗单位。同行者不能被敌人直接选择为目标。
 
-- one persistent passive
-- one charged assist ability
-- narrative and map tags
-- companion-specific cards, events, or card transformations
-- relationship stages and corresponding variations
+每名同行者可以提供：
 
-The architecture may support two slots, but the first playable vertical slice
-implements one active companion slot to control balance complexity.
+- 一个持续被动
+- 一个充能支援技能
+- 剧情和地图标签
+- 专属卡牌、事件或卡牌改造
+- 关系阶段及相应内容变化
 
-Companions connect story and construction without turning combat into a
-multi-character health and turn-order system.
+架构可以支持两个同行者槽，但首个可玩纵切只实现一个激活槽，以控制数值组合规模。
 
-## 10. Damage Settlement Pipeline
+同行者负责连接剧情和构筑，但不把战斗扩张成多角色生命值与行动顺序系统。
 
-No card, enemy, status, companion, or narrative rule may directly mutate
-health. It submits a `DamageRequest` to the settlement pipeline.
-
-### 10.1 Damage request
+## 11. 伤害结算管线
 
-A request records:
+卡牌、敌人、状态、同行者和剧情规则均不得直接修改生命值，必须向结算管线提交
+`DamageRequest`。
 
-- source and target
-- base amount
-- source card, skill, or status ID
-- semantic tags such as `Attack`, `Skill`, `Status`, and `Companion`
-- single-target, area, or multi-hit tags
-- hit index
-- causal chain ID
-- allowed reaction categories
+### 11.1 伤害请求
 
-### 10.2 Ordered stages
+请求至少记录：
 
-1. Validate source, target, death state, immunity, and cancellation.
-2. Apply outgoing source modifiers.
-3. Convert or add semantic damage tags.
-4. Apply incoming target modifiers.
-5. Apply caps, reductions, barriers, and block in fixed order.
-6. Apply the resulting health change.
-7. create an immutable `DamageResult`.
-8. enqueue lifesteal, retaliation, on-damage, companion charge, and death
-   reactions.
-
-The pipeline distinguishes:
-
-- **Damage:** uses the full pipeline.
-- **HealthLoss:** bypasses block and is not treated as damage for reactions.
-- **SetHealth:** reserved for system-level operations.
-
-### 10.3 Determinism and safety
-
-- Use fixed-point integer multipliers, not floating point.
-- Combine multipliers and round only at a documented stage.
-- Sort rules by stage priority and stable ID.
-- Resolve each multi-hit segment independently.
-- Check death after every segment.
-- Do not attack dead targets unless an explicit rule says otherwise.
-- Queue reactions instead of recursively mutating health.
-- Enforce causal-depth and effect-count limits.
-- Record every modifier and absorption in the battle log.
-
-## 11. Non-Programmer Narrative Authoring
-
-Narrative collaborators do not edit C#, boolean expressions, Unity references,
-or generated files.
-
-### 11.1 Authoring sources
-
-- CSV tables contain IDs, tags, conditions, relationships, choices, and
-  references.
-- Markdown files contain dialogue, narration, scene descriptions, and long
-  fragments.
-- Controlled glossaries define characters, terminology, and forbidden early
-  reveals.
-
-### 11.2 Scene template
-
-Every story scene specifies:
-
-- purpose and content category
-- what the player already knows
-- required information or emotional outcome
-- cast and current relationship assumptions
-- opening, development, turn, choice, and result
-- apparent and mechanical meaning of each choice
-- first-read version
-- replay summary
-- reusable fragments
-- forbidden revelations
-- recommended word count and reading time
-
-### 11.3 Controlled conditions
-
-Writers select conditions from a controlled vocabulary such as:
-
-- owns relic
-- discovered fragment
-- chapter stage
-- relationship threshold
-- previous run choice
-
-The content compiler, not the writer, converts these declarations into runtime
-conditions.
-
-### 11.4 Validation
-
-The compiler reports:
-
-- duplicate or missing IDs
-- missing characters, nodes, or fragments
-- contradictory conditions
-- unreachable or non-terminating branches
-- out-of-range state changes
-- required plot information available only through hidden branches
-- text-length violations
-- missing replay summaries
-- generated content that is stale relative to source
-
-## 12. Numerical Design and AI Assistance
-
-The project does not use unconstrained AI-generated production values.
-
-### 12.1 Workflow
-
-1. Humans define experience targets and hard design boundaries.
-2. A baseline value model estimates damage, block, draw, energy, delayed value,
-   and negative effects.
-3. Multiple simulation agents represent random, aggressive, defensive,
-   synergy-seeking, and near-optimal strategies.
-4. Fixed and sampled seeds produce win rate, turn count, health loss, pick rate,
-   combination, route, and failure reports.
-5. Constrained parameter search proposes candidate values without crossing
-   design boundaries.
-6. Language models interpret reports, identify hypotheses, and propose
-   experiments.
-7. Human review approves changes.
-8. Real-player telemetry later calibrates where simulation does not model fun
-   or comprehension.
-
-Suitable optimization methods include bounded parameter sweeps, Bayesian
-optimization, and evolutionary search. Reinforcement learning is deferred until
-the rule system is stable and there is evidence that simpler agents cannot
-cover important strategies.
-
-### 12.2 Required foundation
-
-- pure C# battle rules
-- headless runner
-- deterministic seeds
-- configurable values
-- baseline agents
-- batch reports
-- infinite-loop and bounds checks
-- reproducible command logs
-
-## 13. Runtime State and Persistence
-
-State is divided into:
-
-- `StaticContent`: immutable compiled definitions
-- `MetaProgress`: unlocks, archive, historical endings, and persistent choices
-- `RunState`: deck, health, resources, map position, and random state
-- `NarrativeState`: story, relationships, fragments, conditions, and anomalies
-- `BattleState`: entities, zones, statuses, queue, and battle random state
-
-Serialized state stores stable IDs and pure data, never scene objects.
-
-Save requirements:
-
-- explicit save and content versions
-- atomic checkpoint writes
-- one known-good backup
-- explicit migrations
-- checkpoint at node entry and battle completion
-- immediate persistence of critical choices
-- battle random state and command sequence
-
-A corrupt save must not be silently replaced. The game attempts backup and
-known migrations, then reports a recoverable failure.
-
-## 14. Map Generation
-
-The generator accepts an act definition, seed, and narrative requirements:
-
-1. create start, floor bands, and boss
-2. place required reachable story anchors
-3. generate branches and merges
-4. assign ordinary node categories
-5. place conditional and hidden nodes
-6. validate reachability, spacing, and risk distribution
-7. retry using a deterministically derived seed
-8. use a safe fallback map after a bounded number of attempts
-
-`MapNodeInstance` stores definition ID, position, connections, and run-local
-state. It does not duplicate full content definitions.
-
-## 15. Failure Handling
-
-- Duplicate IDs, missing references, or unreachable required story fail content
-  validation before a build.
-- Missing optional presentation assets are prominent errors in development and
-  explicit placeholders in release.
-- Map generation uses a validated fallback rather than blocking play.
-- Rule failures preserve seed, command log, effect chain, and damage trace.
-- Excessive effect depth or count aborts the current chain and produces a
-  reproducible diagnostic.
-- Unity presentation may fail gracefully without changing the already resolved
-  domain result.
-
-## 16. Verification Strategy
-
-### 16.1 Pure C# tests
-
-- DI construction, scopes, and disposal
-- event subscription lifecycle and ordering
-- lifecycle order and failure handling
-- card effects and zones
-- damage pipeline stages and rounding
-- narrative conditions
-- save migration and round-trip
-- deterministic replay
-
-### 16.2 Property and simulation tests
-
-- generated maps always provide a valid start-to-boss route
-- required story anchors remain reachable
-- health, energy, and stacks remain within valid bounds
-- arbitrary save round-trips preserve state
-- effect queues terminate within configured limits
-- identical seed and command log produce identical results
-
-### 16.3 Unity tests
-
-- EditMode: assembly graph, content import, and Unity adapter integration
-- PlayMode: Bootstrap, scene transition, input, save checkpoint, and minimal
-  combat presentation
-
-### 16.4 Harness evidence
-
-The portable Harness remains the common entrypoint. It validates repository
-state, content-source/generated synchronization, framework boundaries, and
-available pure tests. Unity checks are run when the editor is configured; an
-unavailable Unity check is recorded as a limitation, never presented as a
-passing result.
-
-## 17. Foundation Acceptance Criteria
-
-The foundation milestone is complete only when:
-
-- `CardGame` opens as a Unity `6000.3.10f1` project.
-- Unity-generated caches are not tracked.
-- the repository layout matches this specification or an approved ADR explains
-  a change
-- Assembly Definitions enforce the intended dependency graph.
-- refactored framework modules have focused responsibilities and tests.
-- no pure framework or Domain assembly references Unity.
-- Bootstrap initializes and shuts down a minimal application deterministically.
-- content-source templates and validation entrypoints exist.
-- save, random, command, effect, and damage contracts are represented in pure
-  C# and tested where included in the milestone plan.
-- portable Harness verification passes.
-- Unity compilation and applicable tests pass.
-- `git diff --check` is clean.
-- `feature_list.json`, `progress.md`, and `session-handoff.md` contain current
-  evidence and the next executable step.
-
-## 18. Durable Documentation
-
-This specification is the high-level approved design. Implementation will also
-create and maintain:
+- 来源和目标
+- 基础数值
+- 来源卡牌、技能或状态 ID
+- `Attack`、`Skill`、`Status`、`Companion` 等语义标签
+- 单体、群体或多段标签
+- 当前命中序号
+- 效果链编号
+- 允许触发的后续反应类型
+
+### 11.2 固定阶段
+
+1. 验证来源、目标、死亡状态、免疫和取消规则。
+2. 应用攻击方修正。
+3. 转换或增加伤害语义标签。
+4. 应用受击方修正。
+5. 按固定顺序应用伤害上限、减伤、屏障和格挡。
+6. 应用最终生命变化。
+7. 创建不可变 `DamageResult`。
+8. 将吸血、反击、受伤触发、同行者充能和死亡效果放入队列。
+
+管线明确区分：
+
+- **Damage：** 经过完整伤害管线。
+- **HealthLoss：** 绕过格挡，且不作为伤害触发受击反应。
+- **SetHealth：** 只允许系统级操作使用。
+
+### 11.3 确定性与安全
+
+- 使用定点整数倍率，不使用浮点数。
+- 合并倍率后只在规定阶段取整一次。
+- 同阶段规则按阶段优先级和稳定 ID 排序。
+- 多段伤害的每一段独立结算。
+- 每段伤害后检查死亡。
+- 除非规则明确允许，否则不攻击已死亡目标。
+- 后续反应进入队列，禁止递归修改生命值。
+- 限制效果链深度和效果数量。
+- 战斗日志记录每项修正和吸收值。
+
+## 12. 非程序文案协作
+
+文案协作者不编辑 C#、布尔表达式、Unity 引用或生成文件。
+
+### 12.1 内容源
+
+- CSV 表格保存 ID、标签、条件、关系、选择和引用。
+- Markdown 保存对白、旁白、场景描述和长碎片。
+- 受控词汇表保存角色、术语和禁止提前揭示的信息。
+
+### 12.2 场景模板
+
+每个剧情场景必须说明：
+
+- 场景用途和内容类型
+- 玩家进入时已经知道的信息
+- 必须传达的信息或情绪结果
+- 出场人物及关系前提
+- 开场、推进、转折、选择和结果
+- 每个选择的表面含义和实际影响
+- 首次阅读版本
+- 重复游玩摘要
+- 可复用碎片
+- 禁止提前透露的信息
+- 建议字数和阅读时间
+
+### 12.3 受控条件
+
+写作者从受控条件中选择，例如：
+
+- 拥有某遗物
+- 已发现某碎片
+- 到达某章节阶段
+- 人物关系达到阈值
+- 曾做出某项选择
+
+由内容编译器将声明转换成运行时条件，写作者不编写逻辑代码。
+
+### 12.4 内容验证
+
+编译器检查：
+
+- 重复或缺失 ID
+- 缺失角色、节点或碎片
+- 互相矛盾的条件
+- 无法抵达或无法结束的分支
+- 越界的状态修改
+- 必要主线信息只存在于隐藏分支
+- 文本长度不符合节点类型
+- 缺失重复游玩摘要
+- 生成内容与源文件不同步
+
+## 13. 数值设计与 AI 辅助
+
+项目不允许不受约束的 AI 直接生成并发布正式数值。
+
+### 13.1 调优流程
+
+1. 人工定义体验目标和硬性边界。
+2. 建立伤害、格挡、抽牌、能量、延迟收益和负面效果的基础价值模型。
+3. 使用随机、进攻、防御、协同和近似最优等多类模拟玩家。
+4. 用固定种子和采样种子统计胜率、回合数、生命损耗、选择率、组合与失败原因。
+5. 在设计边界内使用约束参数搜索寻找候选值。
+6. 语言模型负责解释报告、提出问题假设和实验组。
+7. 人工审核后才能采用数值修改。
+8. 后续用真实玩家数据校准模拟无法衡量的趣味和理解成本。
+
+适合的优化方式包括有限参数扫描、贝叶斯优化和进化搜索。强化学习延后到规则稳定，
+且简单代理无法覆盖关键策略时再评估。
+
+### 13.2 必要地基
+
+- 纯 C# 战斗规则
+- 无界面运行器
+- 确定性随机种子
+- 可配置数值
+- 基础策略代理
+- 批量报告
+- 无限循环和越界检查
+- 可复现命令日志
+
+## 14. 运行状态与存档
+
+状态分为：
+
+- `StaticContent`：不可变的编译后定义
+- `MetaProgress`：解锁、档案、历史结局和长期选择
+- `RunState`：牌组、生命、资源、地图位置和随机状态
+- `NarrativeState`：剧情、关系、碎片、条件和异常
+- `BattleState`：实体、卡牌区域、状态、效果队列和战斗随机状态
+
+序列化状态只保存稳定 ID 和纯数据，不保存场景对象。
+
+存档要求：
+
+- 明确记录存档版本和内容版本
+- 原子写入检查点
+- 保留一个已知有效备份
+- 使用显式迁移器
+- 进入节点和战斗结束时保存
+- 关键选择立即持久化
+- 保存战斗随机状态和命令序号
+
+存档损坏时不能静默创建新档并覆盖原文件。系统先尝试备份和已知迁移，再报告可恢复错误。
+
+## 15. 地图生成
+
+地图生成器接收章节定义、随机种子和剧情要求：
+
+1. 创建起点、楼层带和首领。
+2. 放置必须可达的主线锚点。
+3. 生成分叉和汇合。
+4. 分配普通节点类型。
+5. 放置条件节点和隐藏节点。
+6. 验证可达性、间距和风险分布。
+7. 使用确定性派生种子重新尝试。
+8. 达到尝试上限后使用经过验证的保底地图。
+
+`MapNodeInstance` 只保存定义 ID、位置、连接和本局状态，不复制完整内容定义。
+
+## 16. 异常处理
+
+- ID 重复、引用缺失或必要主线不可达时，内容验证直接失败。
+- 可选表现资源缺失时，开发环境明确报错，发布环境显示显式占位内容。
+- 地图生成失败时使用保底地图，不阻止玩家进入游戏。
+- 规则异常时保留随机种子、命令日志、效果链和伤害轨迹。
+- 效果链超过深度或数量限制时中止当前链，并生成可复现报告。
+- Unity 表现失败不能改变已经由 Domain 结算完成的结果。
+
+## 17. 验证策略
+
+### 17.1 纯 C# 测试
+
+- DI 构造、作用域和释放
+- 事件订阅生命周期和顺序
+- 生命周期顺序和失败处理
+- 卡牌效果与卡牌区域
+- 伤害管线阶段和取整
+- 剧情条件
+- 存档迁移和往返一致性
+- 确定性重放
+
+### 17.2 属性测试与模拟
+
+- 任意有效种子都能生成从起点到首领的路线。
+- 必要主线锚点始终可达。
+- 生命、能量和状态层数保持合法。
+- 任意合法存档往返后状态一致。
+- 效果队列在限制内结束。
+- 相同种子和命令日志产生相同结果。
+
+### 17.3 Unity 测试
+
+- EditMode：程序集依赖、内容导入和 Unity 适配层集成。
+- PlayMode：Bootstrap、场景切换、输入、存档检查点和最小战斗表现。
+
+### 17.4 Harness 证据
+
+便携 Harness 继续作为统一入口，验证仓库状态、内容源与生成物同步、框架边界和可运行的
+纯 C# 测试。Unity Editor 可用时运行 Unity 检查；无法运行的检查必须记录为限制，
+不能描述为通过。
+
+## 18. 项目地基验收标准
+
+只有满足以下条件，项目地基阶段才算完成：
+
+- `CardGame` 能以 Unity `6000.3.10f1` 项目打开。
+- Unity 生成缓存未被跟踪。
+- 仓库布局符合本文，或有经确认的 ADR 解释差异。
+- Assembly Definition 强制执行预期依赖图。
+- 重构后的框架模块职责集中且有测试。
+- 纯框架程序集和 Domain 均不引用 Unity。
+- Bootstrap 能确定性初始化和关闭最小应用。
+- 内容源模板和验证入口存在。
+- 实施计划纳入的存档、随机、命令、效果和伤害契约由纯 C# 表达并经过测试。
+- 便携 Harness 验证通过。
+- Unity 编译及适用测试通过。
+- `git diff --check` 无错误。
+- `feature_list.json`、`progress.md` 和 `session-handoff.md` 保存当前证据与下一步。
+
+## 19. 持久化文档
+
+本文是已确认的高层设计。实施过程中还要创建并维护：
 
 - `docs/NARRATIVE-AUTHORING.md`
 - `docs/BALANCING.md`
-- focused ADRs under `docs/decisions/`
-- feature records with dependencies and acceptance criteria
-- command evidence in `progress.md`
-- an executable next step in `session-handoff.md`
+- `docs/decisions/` 下的独立架构决策记录
+- 带依赖和验收标准的功能记录
+- `progress.md` 中的实际执行命令和结果
+- `session-handoff.md` 中唯一明确的下一步
 
-Chat history is not treated as the source of truth.
+聊天记录不作为项目的唯一真实来源。
 
-## 19. Implementation Planning Boundary
+## 20. 实施计划边界
 
-No implementation begins from this document alone. After repository review, a
-separate implementation plan will:
+本文本身不授权直接开始实现。仓库文档审核通过后，独立实施计划必须：
 
-- inventory and disposition every existing framework type
-- split work into one active feature at a time
-- specify tests before implementation changes
-- name exact files and verification commands
-- define safe migration and rollback steps
+- 清点并决定每个现有框架类型的去留。
+- 保证任一时刻只有一个 `in-progress` 功能。
+- 在实现修改前指定测试。
+- 明确列出文件路径和验证命令。
+- 定义安全迁移和回退步骤。
 
