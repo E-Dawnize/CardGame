@@ -1,0 +1,4 @@
+# Superpowers' parallel and subagent workflows require this capability.
+# AGENTS.md still limits their use to applicable, authorized tasks.
+[features]
+multi_agent = true

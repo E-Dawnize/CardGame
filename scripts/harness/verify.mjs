@@ -1,0 +1,409 @@
+#!/usr/bin/env node
+
+import { spawnSync } from "node:child_process";
+import { readFile, readdir } from "node:fs/promises";
+import os from "node:os";
+import path from "node:path";
+import process from "node:process";
+import { fileURLToPath } from "node:url";
+
+const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
+const FULL = process.argv.includes("--full");
+const failures = [];
+const warnings = [];
+let passed = 0;
+
+function pass(message) {
+  passed += 1;
+  console.log("[PASS] " + message);
+}
+
+function warn(message) {
+  warnings.push(message);
+  console.log("[WARN] " + message);
+}
+
+function fail(message) {
+  failures.push(message);
+  console.error("[FAIL] " + message);
+}
+
+async function text(relativePath) {
+  return readFile(path.join(ROOT, relativePath), "utf8");
+}
+
+async function requireFile(relativePath) {
+  try {
+    const value = await text(relativePath);
+    if (!value.trim()) {
+      fail(relativePath + " is empty");
+      return;
+    }
+    pass(relativePath + " exists");
+  } catch {
+    fail(relativePath + " is missing");
+  }
+}
+
+async function walk(directory, suffix) {
+  const files = [];
+  for (const entry of await readdir(directory, { withFileTypes: true })) {
+    const absolute = path.join(directory, entry.name);
+    if (entry.isDirectory()) {
+      files.push(...await walk(absolute, suffix));
+    } else if (entry.isFile() && absolute.endsWith(suffix)) {
+      files.push(absolute);
+    }
+  }
+  return files;
+}
+
+function checkFeatureState(state) {
+  if (!state || !Array.isArray(state.features)) {
+    fail("feature_list.json must contain a features array");
+    return;
+  }
+
+  const allowed = new Set(["not-started", "in-progress", "blocked", "done"]);
+  const ids = new Set();
+  const byId = new Map();
+
+  for (const feature of state.features) {
+    if (!/^feat-\d{3}$/.test(feature.id || "")) {
+      fail("Invalid feature id: " + (feature.id || "<missing>"));
+      continue;
+    }
+    if (ids.has(feature.id)) {
+      fail("Duplicate feature id: " + feature.id);
+    }
+    ids.add(feature.id);
+    byId.set(feature.id, feature);
+
+    if (!feature.name || !feature.description) {
+      fail(feature.id + " needs a name and description");
+    }
+    if (!Array.isArray(feature.dependencies)) {
+      fail(feature.id + " needs a dependencies array");
+    }
+    if (!allowed.has(feature.status)) {
+      fail(feature.id + " has invalid status " + feature.status);
+    }
+    if (!Array.isArray(feature.doneCriteria) || feature.doneCriteria.length === 0) {
+      fail(feature.id + " needs explicit doneCriteria");
+    }
+    if (feature.status === "done" && !(feature.evidence || "").trim()) {
+      fail(feature.id + " is done without evidence");
+    }
+  }
+
+  const active = state.features.filter((feature) => feature.status === "in-progress");
+  if (active.length > 1) {
+    fail("Only one feature may be in-progress; found " + active.length);
+  }
+
+  for (const feature of state.features) {
+    for (const dependency of feature.dependencies || []) {
+      if (!ids.has(dependency)) {
+        fail(feature.id + " depends on missing feature " + dependency);
+      }
+      if (dependency === feature.id) {
+        fail(feature.id + " cannot depend on itself");
+      }
+    }
+  }
+
+  const visiting = new Set();
+  const visited = new Set();
+
+  function visit(id) {
+    if (visiting.has(id)) {
+      fail("Feature dependency cycle detected at " + id);
+      return;
+    }
+    if (visited.has(id) || !byId.has(id)) {
+      return;
+    }
+    visiting.add(id);
+    for (const dependency of byId.get(id).dependencies || []) {
+      visit(dependency);
+    }
+    visiting.delete(id);
+    visited.add(id);
+  }
+
+  for (const id of ids) {
+    visit(id);
+  }
+
+  pass(
+    "Feature state parsed (" + state.features.length +
+    " features, " + active.length + " in progress)"
+  );
+}
+
+async function checkSuperpowers() {
+  const skills = [
+    "brainstorming",
+    "dispatching-parallel-agents",
+    "executing-plans",
+    "finishing-a-development-branch",
+    "receiving-code-review",
+    "requesting-code-review",
+    "subagent-driven-development",
+    "systematic-debugging",
+    "test-driven-development",
+    "using-git-worktrees",
+    "using-superpowers",
+    "verification-before-completion",
+    "writing-plans",
+    "writing-skills"
+  ];
+
+  let valid = 0;
+  for (const skill of skills) {
+    const relative = ".agents/skills/" + skill + "/SKILL.md";
+    try {
+      const value = await text(relative);
+      const frontmatter = value.match(/^---\s*\r?\n([\s\S]*?)\r?\n---/);
+      const namePattern = new RegExp(
+        "^name:\\s*[\"']?" + skill + "[\"']?\\s*$",
+        "m"
+      );
+      if (!frontmatter || !namePattern.test(frontmatter[1])) {
+        fail(relative + " has invalid frontmatter or name");
+      } else if (!/^description:\s*.+$/m.test(frontmatter[1])) {
+        fail(relative + " has no trigger description");
+      } else {
+        valid += 1;
+      }
+    } catch {
+      fail(relative + " is missing");
+    }
+  }
+
+  if (valid === skills.length) {
+    pass("Superpowers skill library is complete (" + valid + " skills)");
+  }
+
+  try {
+    const source = JSON.parse(await text("third_party/superpowers/SOURCE.json"));
+    const pinned =
+      source.version === "6.2.0" &&
+      source.commit === "3dcbd5c4b48e02263fbf4a3c01e3fe4f81d584d9";
+    if (pinned) {
+      pass("Superpowers source metadata is pinned to v6.2.0");
+    } else {
+      fail("Superpowers source metadata does not match the vendored version");
+    }
+  } catch {
+    fail("Superpowers source metadata is missing or invalid");
+  }
+}
+
+async function checkCSharpBoundaries() {
+  const modules = new Map([
+    ["DI", "RazorFramework.DI"],
+    ["Lifecycle", "RazorFramework.Lifecycle"],
+    ["Events", "RazorFramework.Events"],
+    ["MVVM", "RazorFramework.MVVM"],
+    ["Input", "RazorFramework.Input"],
+    ["Boot", "RazorFramework.Boot"]
+  ]);
+  let count = 0;
+
+  for (const [module, namespaceName] of modules) {
+    let files;
+    try {
+      files = await walk(path.join(ROOT, module), ".cs");
+    } catch {
+      fail("Source module is missing: " + module + "/");
+      continue;
+    }
+
+    for (const file of files) {
+      count += 1;
+      const relative = path.relative(ROOT, file).replaceAll("\\", "/");
+      const value = await readFile(file, "utf8");
+      const code = value
+        .replace(/\/\*[\s\S]*?\*\//g, "")
+        .replace(/^\s*\/\/.*$/gm, "");
+      const namespacePattern = new RegExp(
+        "\\bnamespace\\s+" + namespaceName.replaceAll(".", "\\.") + "(?:\\.|\\s*\\{)"
+      );
+      if (!namespacePattern.test(code)) {
+        fail(relative + " is outside namespace " + namespaceName);
+      }
+
+      const importsUnity = /^\s*using\s+UnityEngine(?:\.|;)/m.test(code);
+      const qualifiedUnity = /\bUnityEngine\.[A-Za-z_]\w*/.test(code);
+      if (module === "DI" && (importsUnity || qualifiedUnity)) {
+        const knownNullGuard =
+          relative === "DI/DIContainer.cs" &&
+          !importsUnity &&
+          (code.match(/\bUnityEngine\.[A-Za-z_]\w*/g) || []).length === 1 &&
+          code.includes(
+            "if (target is UnityEngine.Object uo && uo == null) return;"
+          );
+        if (knownNullGuard) {
+          warn("Known DI Unity null-guard debt is tracked by feat-002");
+        } else {
+          fail(relative + " violates the DI BCL-only boundary");
+        }
+      }
+
+      const pureMvvm =
+        relative.startsWith("MVVM/Commands/") ||
+        relative.startsWith("MVVM/ViewModel/");
+      if (pureMvvm && (importsUnity || qualifiedUnity)) {
+        fail(relative + " violates the pure-C# MVVM boundary");
+      }
+    }
+  }
+
+  if (count > 0) {
+    pass("C# module boundaries checked (" + count + " files)");
+  }
+}
+
+function run(command, args, capture, timeout) {
+  return spawnSync(command, args, {
+    cwd: ROOT,
+    encoding: "utf8",
+    stdio: capture ? "pipe" : "inherit",
+    timeout
+  });
+}
+
+function checkGitDiff() {
+  const result = run("git", ["diff", "--check"], true);
+  if (result.error) {
+    fail("Unable to run git diff --check: " + result.error.message);
+  } else if (result.status !== 0) {
+    const details = ((result.stdout || "") + (result.stderr || "")).trim();
+    fail("git diff --check failed" + (details ? ":\n" + details : ""));
+  } else {
+    pass("git diff --check is clean");
+  }
+}
+
+async function fullChecks() {
+  const rootEntries = await readdir(ROOT);
+  const buildFile = rootEntries.find(
+    (name) => name.endsWith(".sln") || name.endsWith(".csproj")
+  );
+
+  if (buildFile) {
+    const result = run("dotnet", ["test", "--nologo"], false);
+    result.status === 0 ? pass("dotnet test passed") : fail("dotnet test failed");
+  } else {
+    warn("No root .sln or .csproj; standalone .NET tests were not run");
+  }
+
+  const editor = process.env.UNITY_EDITOR;
+  const projectPath = process.env.RAZOR_UNITY_PROJECT;
+  if (!editor || !projectPath) {
+    warn(
+      "UNITY_EDITOR and RAZOR_UNITY_PROJECT are not both set; " +
+      "Unity EditMode tests were not run"
+    );
+    return;
+  }
+
+  const resultPath = path.join(os.tmpdir(), "RazorFramework-EditMode-results.xml");
+  const result = run(
+    editor,
+    [
+      "-batchmode",
+      "-nographics",
+      "-quit",
+      "-projectPath",
+      projectPath,
+      "-runTests",
+      "-testPlatform",
+      "EditMode",
+      "-testResults",
+      resultPath,
+      "-logFile",
+      "-"
+    ],
+    false,
+    30 * 60 * 1000
+  );
+
+  if (result.status === 0) {
+    pass("Unity EditMode tests passed (" + resultPath + ")");
+  } else {
+    fail("Unity EditMode tests failed with exit code " + (result.status ?? "unknown"));
+  }
+}
+
+async function main() {
+  process.chdir(ROOT);
+  console.log("RazorFramework harness verification: " + ROOT);
+  console.log("Mode: " + (FULL ? "full" : "portable"));
+  console.log("");
+
+  const nodeMajor = Number.parseInt(process.versions.node.split(".")[0], 10);
+  nodeMajor >= 18
+    ? pass("Node.js " + process.versions.node + " is supported")
+    : fail("Node.js 18 or newer is required");
+
+  const required = [
+    "AGENTS.md",
+    "README.md",
+    "DESIGN-REVIEW.md",
+    "docs/CONTRACT.md",
+    "docs/HARNESS.md",
+    "feature_list.json",
+    "feature_list.schema.json",
+    "progress.md",
+    "session-handoff.md",
+    "init.sh",
+    "init.ps1",
+    ".codex/config.toml",
+    "third_party/superpowers/LICENSE",
+    "third_party/superpowers/SOURCE.json"
+  ];
+  for (const relative of required) {
+    await requireFile(relative);
+  }
+
+  try {
+    const schema = JSON.parse(await text("feature_list.schema.json"));
+    schema?.properties?.features
+      ? pass("feature_list.schema.json is valid JSON")
+      : fail("feature_list.schema.json has no features definition");
+  } catch {
+    fail("feature_list.schema.json is not valid JSON");
+  }
+
+  try {
+    checkFeatureState(JSON.parse(await text("feature_list.json")));
+  } catch {
+    fail("feature_list.json is not valid JSON");
+  }
+
+  await checkSuperpowers();
+  await checkCSharpBoundaries();
+  checkGitDiff();
+
+  if (FULL) {
+    await fullChecks();
+  } else {
+    warn(
+      "Unity compilation/tests were not run in portable mode; " +
+      "use --full with a configured consuming project"
+    );
+  }
+
+  console.log("");
+  console.log(
+    "Summary: " + passed + " passed, " + warnings.length +
+    " warning(s), " + failures.length + " failure(s)"
+  );
+  if (failures.length > 0) {
+    process.exitCode = 1;
+  }
+}
+
+await main();

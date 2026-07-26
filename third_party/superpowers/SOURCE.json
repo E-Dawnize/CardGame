@@ -1,0 +1,9 @@
+{
+  "name": "superpowers",
+  "source": "https://github.com/obra/superpowers",
+  "version": "6.2.0",
+  "commit": "3dcbd5c4b48e02263fbf4a3c01e3fe4f81d584d9",
+  "license": "MIT",
+  "vendoredPath": ".agents/skills",
+  "vendoredOn": "2026-07-26"
+}

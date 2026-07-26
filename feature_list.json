@@ -1,0 +1,58 @@
+{
+  "$schema": "./feature_list.schema.json",
+  "features": [
+    {
+      "id": "feat-001",
+      "name": "Project Harness Foundation",
+      "description": "Add durable instructions, state tracking, verification entrypoints, lifecycle handoff, and a pinned project-local Superpowers skill library.",
+      "dependencies": [],
+      "status": "done",
+      "doneCriteria": [
+        "All five harness subsystems have repository artifacts",
+        "All 14 pinned Superpowers skills are discoverable under .agents/skills",
+        "Portable harness verification passes",
+        "Current verification limits and the next step are documented"
+      ],
+      "evidence": "2026-07-26: node scripts/harness/verify.mjs passed 21 checks with 2 documented warnings; the reference harness validator scored all five subsystems 5/5 (100/100)."
+    },
+    {
+      "id": "feat-002",
+      "name": "Pure C# DI Boundary",
+      "description": "Remove the direct UnityEngine.Object null guard from DIContainer without losing destroyed-Unity-object safety.",
+      "dependencies": ["feat-001"],
+      "status": "not-started",
+      "doneCriteria": [
+        "DI contains no compile-time UnityEngine reference",
+        "Destroyed Unity object injection remains safe through an adapter or caller-side guard",
+        "Pure C# and consuming Unity tests cover the behavior"
+      ],
+      "evidence": ""
+    },
+    {
+      "id": "feat-003",
+      "name": "Assembly Definition Boundaries",
+      "description": "Add Unity Assembly Definition files that enforce the dependency directions documented in DESIGN-REVIEW.md.",
+      "dependencies": ["feat-002"],
+      "status": "not-started",
+      "doneCriteria": [
+        "Each framework module has an Assembly Definition",
+        "Unity compiles the dependency graph in a consuming project",
+        "Pure C# module boundaries remain free of Unity references"
+      ],
+      "evidence": ""
+    },
+    {
+      "id": "feat-004",
+      "name": "Unity Test Host",
+      "description": "Create or document a repeatable consuming Unity project that compiles the framework and runs EditMode tests.",
+      "dependencies": ["feat-003"],
+      "status": "not-started",
+      "doneCriteria": [
+        "A clean checkout can invoke the Unity test path",
+        "DI, event, lifecycle, and command behavior has automated coverage",
+        "Test results can be recorded as harness evidence"
+      ],
+      "evidence": ""
+    }
+  ]
+}
