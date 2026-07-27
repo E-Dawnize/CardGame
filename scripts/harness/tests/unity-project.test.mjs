@@ -105,6 +105,16 @@ test("rejects Bootstrap when it is disabled before another enabled scene", async
   assert.ok(result.problems.includes("first enabled scene must be Assets/CardGame/Scenes/Bootstrap.unity"));
 });
 
+test("CLI reports an invalid host passed through --root", async () => {
+  const root = await createFixture();
+  await writeSettings(root, "com.example.cardgame");
+  const cliPath = path.resolve("scripts/harness/verify-unity-project.mjs");
+  const result = spawnSync(process.execPath, [cliPath, "--root", root], { encoding: "utf8", cwd: path.resolve() });
+  assert.equal(result.status, 1);
+  assert.equal(result.stdout, "");
+  assert.match(result.stderr, /\[FAIL\] Standalone application identifier must be com\.edawnize\.cardgame/);
+});
+
 test("CLI validates the fixture passed through --root", async () => {
   const root = await createFixture();
   const cliPath = path.resolve("scripts/harness/verify-unity-project.mjs");
