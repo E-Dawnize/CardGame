@@ -1,4 +1,4 @@
-import { readFile } from "node:fs/promises";
+﻿import { readFile } from "node:fs/promises";
 import path from "node:path";
 
 const REQUIRED_PACKAGES = new Map([
@@ -19,6 +19,26 @@ async function read(root, relativePath, problems) {
 
 function capture(text, expression) {
   return text.match(expression)?.[1]?.trim() ?? "";
+}
+
+function firstEnabledScene(text) {
+  const scenes = [];
+  let scene;
+
+  for (const line of text.split(/\r?\n/)) {
+    const enabled = line.match(/^\s*-\s+enabled:\s*(\d+)\s*$/);
+    if (enabled) {
+      if (scene) scenes.push(scene);
+      scene = { enabled: enabled[1] === "1", path: "" };
+      continue;
+    }
+
+    const scenePath = line.match(/^\s*path:\s*(.+)$/);
+    if (scene && scenePath) scene.path = scenePath[1].trim();
+  }
+
+  if (scene) scenes.push(scene);
+  return scenes.find((candidate) => candidate.enabled)?.path ?? "";
 }
 
 export async function inspectUnityProject(root) {
@@ -49,7 +69,7 @@ export async function inspectUnityProject(root) {
       settingsText,
       /^\s*Standalone:\s*(com\.edawnize\.cardgame)$/m
     ),
-    firstScene: capture(buildText, /^\s*path:\s*(.+)$/m)
+    firstScene: firstEnabledScene(buildText)
   };
 
   if (info.editorVersion !== "6000.3.10f1") {
