@@ -43,3 +43,10 @@ Unity 编译/测试。
 ## 下一步
 
 创建 Unity 项目结构验证器，并先用 Node 测试固定迁移契约。
+
+## 修改后验证
+
+- 修改前基线：`node scripts/harness/verify.mjs`，结果为 21 passed、2 warning(s)、0 failure(s)。
+- 修改后命令：`node scripts/harness/verify.mjs`。
+- 修改后实际结果：21 passed、2 warning(s)、0 failure(s)。
+- 修改后状态解析：`Feature state parsed (5 features, 1 in progress)`。

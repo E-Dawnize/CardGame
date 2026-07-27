@@ -43,3 +43,10 @@
 
 - [x] 便携检查：`node scripts/harness/verify.mjs`；修改前结果为 21 passed、2 warning(s)、0 failure(s)。
 - [ ] Unity 编译/测试：本任务仅激活状态，未运行。
+
+## 修改后验证
+
+- 修改前基线：`node scripts/harness/verify.mjs`，结果为 21 passed、2 warning(s)、0 failure(s)。
+- 修改后命令：`node scripts/harness/verify.mjs`。
+- 修改后实际结果：21 passed、2 warning(s)、0 failure(s)。
+- 修改后状态解析：`Feature state parsed (5 features, 1 in progress)`。
