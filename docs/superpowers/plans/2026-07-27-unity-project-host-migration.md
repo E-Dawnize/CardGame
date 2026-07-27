@@ -8,8 +8,9 @@
 **目标：** 将 `D:\Unity Project\Temp` 中必要的 Unity 6 项目文件安全迁移到
 `CardGame`，建立可编译、可运行 EditMode 测试、可由 Harness 验证的 Unity 项目宿主。
 
-**架构：** `CardGame` 成为 Unity 项目根目录，模板资源整理到
-`Assets/CardGame/`，现有 RazorFramework 源码在本计划中继续留在仓库根目录，
+**架构：** `CardGame` 成为 Unity 项目根目录，实现工作在 `codex/unity-project-host` 隔离工作树中进行，所有目标路径从
+`git rev-parse --show-toplevel` 取得。模板资源整理到 `Assets/CardGame/`，
+现有 RazorFramework 源码在本计划中继续留在仓库根目录，
 不进入 Unity 编译范围。后续独立计划再以测试驱动方式重构并迁入
 `Assets/Plugins/RazorFramework/`，避免未验证框架阻塞宿主迁移。
 
@@ -21,6 +22,8 @@ Unity Test Framework `1.6.0`、C#、Node.js `>=18`、PowerShell、Git。
 - 目标 Unity 版本固定为 `6000.3.10f1`。
 - Unity 可执行文件为
   `C:\Program Files\Unity\Hub\Editor\6000.3.10f1\Editor\Unity.exe`。
+- 实现在 `codex/unity-project-host` 隔离分支中进行；目标根目录必须通过
+  `git rev-parse --show-toplevel` 获取，不能写死为主工作目录。
 - 迁移 `Assets/`、`Packages/`、`ProjectSettings/`，并保留所有必要 `.meta` 文件。
 - 不迁移 `Library/`、`Temp/`、`Logs/`、`UserSettings/`、`.vscode/`、
   `.sln`、`.slnx` 和 `.csproj`。
@@ -42,9 +45,6 @@ Unity Test Framework `1.6.0`、C#、Node.js `>=18`、PowerShell、Git。
 CardGame/
 ├─ Assets/
 │  └─ CardGame/
-│     ├─ Runtime/
-│     │  ├─ CardGame.Runtime.asmdef       # 纯 C# 初始运行时程序集
-│     │  └─ ProjectIdentity.cs            # 可测试的项目身份常量
 │     ├─ Scenes/
 │     │  └─ Bootstrap.unity               # 从模板场景保留 GUID 后重命名
 │     ├─ Settings/                         # 2D URP 与输入模板设置
@@ -72,7 +72,8 @@ CardGame/
 ```
 
 根目录现有的 `Boot/`、`DI/`、`Events/`、`Input/`、`Lifecycle/` 和 `MVVM/`
-在本计划中保持原位。这样 Unity 首次导入只编译经过验证的最小 CardGame 程序集。
+在本计划中保持原位，不进入 Unity 编译范围。宿主迁移阶段只编译模板资源和
+EditMode 项目配置测试。
 
 ---
 
@@ -123,7 +124,7 @@ git -c safe.directory='D:/Unity Project/CardGame' log --oneline -5
   "doneCriteria": [
     "CardGame contains the approved Assets, Packages, and ProjectSettings roots without Unity-generated caches",
     "Project identity and Bootstrap scene paths are normalized for CardGame",
-    "A pure C# CardGame runtime assembly and EditMode smoke tests compile in Unity 6000.3.10f1",
+    "Unity EditMode smoke tests validate the approved project identity and Bootstrap build-scene configuration in Unity 6000.3.10f1",
     "Portable and full Harness verification pass from the CardGame repository root",
     "README, Harness documentation, progress, and handoff describe the Unity-host workflow in Chinese"
   ],
@@ -425,7 +426,7 @@ git commit -m "test: define Unity project host contract"
 
 ---
 
-### Task 3：迁移并整理 Unity 项目文件
+### Task 3：迁移原始 Unity 项目宿主
 
 **文件：**
 
@@ -433,48 +434,202 @@ git commit -m "test: define Unity project host contract"
 - 创建：`Packages/manifest.json`
 - 创建：`Packages/packages-lock.json`
 - 创建：`ProjectSettings/`
-- 修改：`ProjectSettings/ProjectSettings.asset`
-- 修改：`ProjectSettings/EditorBuildSettings.asset`
 
 **接口：**
 
 - 输入：`D:\Unity Project\Temp` 中 Unity `6000.3.10f1` 模板
-- 输出：满足 `inspectUnityProject()` 的 CardGame Unity 宿主
+- 输出：可以由 Unity 打开和导入的原始模板宿主
 - 保留：模板资源原 `.meta` GUID
+- 边界：本任务不修改模板项目身份、场景路径或资源布局
 
 - [ ] **Step 1：解析并核对迁移路径**
 
 ```powershell
 $sourceRoot = (Resolve-Path -LiteralPath 'D:\Unity Project\Temp').Path
-$targetRoot = (Resolve-Path -LiteralPath 'D:\Unity Project\CardGame').Path
-if ($sourceRoot -ne 'D:\Unity Project\Temp') { throw "Unexpected source: $sourceRoot" }
-if ($targetRoot -ne 'D:\Unity Project\CardGame') { throw "Unexpected target: $targetRoot" }
+$repoRoot = (git rev-parse --show-toplevel).Trim()
+$branch = (git branch --show-current).Trim()
+if ($sourceRoot -ne 'D:\Unity Project\Temp') {
+  throw "Unexpected source: $sourceRoot"
+}
+if (-not (Test-Path -LiteralPath (Join-Path $repoRoot '.git'))) {
+  $gitFile = Join-Path $repoRoot '.git'
+  if (-not (Test-Path -LiteralPath $gitFile -PathType Leaf)) {
+    throw "Target is not a Git working tree: $repoRoot"
+  }
+}
+if ($branch -eq 'main' -or $branch -eq 'master') {
+  throw "Migration must run in the isolated feature worktree"
+}
 foreach ($name in @('Assets', 'Packages', 'ProjectSettings')) {
-  if (Test-Path -LiteralPath (Join-Path $targetRoot $name)) {
+  if (Test-Path -LiteralPath (Join-Path $repoRoot $name)) {
     throw "Target already exists: $name"
   }
 }
 ```
 
-预期：命令无输出且不抛出异常。
+预期：当前分支为 `codex/unity-project-host`，命令无异常。
 
 - [ ] **Step 2：复制三个允许的 Unity 根目录**
 
 ```powershell
-Copy-Item -LiteralPath 'D:\Unity Project\Temp\Assets' `
-  -Destination 'D:\Unity Project\CardGame\Assets' -Recurse
-Copy-Item -LiteralPath 'D:\Unity Project\Temp\Packages' `
-  -Destination 'D:\Unity Project\CardGame\Packages' -Recurse
-Copy-Item -LiteralPath 'D:\Unity Project\Temp\ProjectSettings' `
-  -Destination 'D:\Unity Project\CardGame\ProjectSettings' -Recurse
+Copy-Item -LiteralPath (Join-Path $sourceRoot 'Assets') `
+  -Destination (Join-Path $repoRoot 'Assets') -Recurse
+Copy-Item -LiteralPath (Join-Path $sourceRoot 'Packages') `
+  -Destination (Join-Path $repoRoot 'Packages') -Recurse
+Copy-Item -LiteralPath (Join-Path $sourceRoot 'ProjectSettings') `
+  -Destination (Join-Path $repoRoot 'ProjectSettings') -Recurse
 ```
 
-不得执行针对 `Temp`、`Library` 或仓库根目录的递归删除。
+不得复制或删除 `Temp`、`Library`、`Logs`、`UserSettings` 以及生成的工程文件。
 
-- [ ] **Step 3：按 CardGame 布局移动模板资产**
+- [ ] **Step 3：确认迁移范围**
 
 ```powershell
-New-Item -ItemType Directory -Path 'Assets\CardGame'
+git status --short
+git ls-files Library Temp Logs UserSettings '*.sln' '*.slnx' '*.csproj'
+```
+
+预期：
+
+- `git status` 只显示 `Assets/`、`Packages/` 和 `ProjectSettings/`。
+- 第二条命令没有输出。
+- 此时 `productName` 仍为 `Temp`，构建场景仍为
+  `Assets/Scenes/SampleScene.unity`。
+
+- [ ] **Step 4：运行 Unity 原始模板导入基线**
+
+```powershell
+$env:UNITY_EDITOR =
+  'C:\Program Files\Unity\Hub\Editor\6000.3.10f1\Editor\Unity.exe'
+& $env:UNITY_EDITOR -batchmode -nographics -quit `
+  -projectPath $repoRoot `
+  -logFile (Join-Path $repoRoot 'Logs\host-import-baseline.log')
+if ($LASTEXITCODE -ne 0) {
+  Get-Content (Join-Path $repoRoot 'Logs\host-import-baseline.log') -Tail 200
+  exit $LASTEXITCODE
+}
+```
+
+预期：Unity 导入成功并返回退出码 0。`Library/` 和 `Logs/` 均被忽略。
+
+- [ ] **Step 5：提交未经业务调整的 Unity 宿主**
+
+```powershell
+git add Assets Packages ProjectSettings
+git commit -m "feat: migrate raw Unity project host"
+```
+
+---
+
+### Task 4：用 EditMode 测试驱动 CardGame 项目配置
+
+**文件：**
+
+- 创建：`Assets/CardGame/Tests/EditMode/CardGame.Tests.EditMode.asmdef`
+- 创建：`Assets/CardGame/Tests/EditMode/ProjectFoundationTests.cs`
+- 创建：Unity 为上述目录和文件生成的 `.meta`
+- 移动：`Assets/Scenes/` → `Assets/CardGame/Scenes/`
+- 移动：`Assets/Settings/` → `Assets/CardGame/Settings/`
+- 移动：三个根级模板配置资源及其 `.meta`
+- 修改：`ProjectSettings/ProjectSettings.asset`
+- 修改：`ProjectSettings/EditorBuildSettings.asset`
+
+**接口：**
+
+- 测试 Unity 实际解析的 `PlayerSettings`。
+- 测试首个启用构建场景为
+  `Assets/CardGame/Scenes/Bootstrap.unity`。
+- 本任务不创建只供测试调用的运行时类型。
+
+- [ ] **Step 1：创建 EditMode 测试程序集**
+
+创建目录 `Assets/CardGame/Tests/EditMode/`。
+
+创建 `Assets/CardGame/Tests/EditMode/CardGame.Tests.EditMode.asmdef`：
+
+```json
+{
+  "name": "CardGame.Tests.EditMode",
+  "rootNamespace": "CardGame.Tests.EditMode",
+  "references": [],
+  "includePlatforms": [
+    "Editor"
+  ],
+  "optionalUnityReferences": [
+    "TestAssemblies"
+  ],
+  "autoReferenced": false
+}
+```
+
+- [ ] **Step 2：先写项目配置行为测试**
+
+创建 `Assets/CardGame/Tests/EditMode/ProjectFoundationTests.cs`：
+
+```csharp
+using System.Linq;
+using NUnit.Framework;
+using UnityEditor;
+
+namespace CardGame.Tests.EditMode
+{
+    public sealed class ProjectFoundationTests
+    {
+        [Test]
+        public void ProjectSettings_UseApprovedIdentity()
+        {
+            Assert.Multiple(() =>
+            {
+                Assert.That(PlayerSettings.productName, Is.EqualTo("CardGame"));
+                Assert.That(PlayerSettings.companyName, Is.EqualTo("E-Dawnize"));
+            });
+        }
+
+        [Test]
+        public void Bootstrap_IsFirstEnabledBuildScene()
+        {
+            var scene = EditorBuildSettings.scenes.First(item => item.enabled);
+
+            Assert.That(
+                scene.path,
+                Is.EqualTo("Assets/CardGame/Scenes/Bootstrap.unity"));
+        }
+    }
+}
+```
+
+这两个测试分别捕获模板身份未修改，以及场景移动后构建路径未同步。
+
+- [ ] **Step 3：运行 Unity 并确认测试先失败**
+
+```powershell
+$repoRoot = (git rev-parse --show-toplevel).Trim()
+$env:UNITY_EDITOR =
+  'C:\Program Files\Unity\Hub\Editor\6000.3.10f1\Editor\Unity.exe'
+$redResult = Join-Path ([IO.Path]::GetTempPath()) `
+  'CardGame-foundation-red.xml'
+& $env:UNITY_EDITOR -batchmode -nographics -quit `
+  -projectPath $repoRoot `
+  -runTests -testPlatform EditMode `
+  -testResults $redResult `
+  -logFile (Join-Path $repoRoot 'Logs\foundation-red.log')
+if ($LASTEXITCODE -eq 0) {
+  throw "Expected the unnormalized Temp project tests to fail"
+}
+Select-String -Path $redResult `
+  -Pattern 'ProjectSettings_UseApprovedIdentity|Bootstrap_IsFirstEnabledBuildScene'
+```
+
+预期：
+
+- Unity 返回非零退出码。
+- 结果包含两个测试名称。
+- 失败值分别包含 `Temp`、`DefaultCompany` 和
+  `Assets/Scenes/SampleScene.unity`。
+
+- [ ] **Step 4：按 CardGame 布局移动模板资产**
+
+```powershell
 Move-Item -LiteralPath 'Assets\Scenes' `
   -Destination 'Assets\CardGame\Scenes'
 Move-Item -LiteralPath 'Assets\Scenes.meta' `
@@ -504,22 +659,7 @@ foreach ($name in @(
 }
 ```
 
-- [ ] **Step 4：创建 `Assets/CardGame.meta`**
-
-创建 `Assets/CardGame.meta`：
-
-```yaml
-fileFormatVersion: 2
-guid: 0c3fd7ed2ea54cc0a7c03f9b5182423
-folderAsset: yes
-DefaultImporter:
-  externalObjects: {}
-  userData:
-  assetBundleName:
-  assetBundleVariant:
-```
-
-- [ ] **Step 5：修改项目身份**
+- [ ] **Step 5：修改项目身份与构建场景**
 
 在 `ProjectSettings/ProjectSettings.asset` 中做精确替换：
 
@@ -537,8 +677,6 @@ DefaultImporter:
 +    Standalone: com.edawnize.cardgame
 ```
 
-- [ ] **Step 6：修改首个构建场景路径**
-
 在 `ProjectSettings/EditorBuildSettings.asset` 中保持原 GUID
 `8c9cfa26abfee488c85f1582747f6a02`，只修改路径：
 
@@ -547,7 +685,7 @@ DefaultImporter:
 +    path: Assets/CardGame/Scenes/Bootstrap.unity
 ```
 
-- [ ] **Step 7：运行独立结构检查**
+- [ ] **Step 6：运行便携结构检查**
 
 ```powershell
 node scripts/harness/verify-unity-project.mjs
@@ -559,172 +697,29 @@ node scripts/harness/verify-unity-project.mjs
 [PASS] CardGame Unity project host is valid
 ```
 
-- [ ] **Step 8：检查没有迁移缓存**
+- [ ] **Step 7：运行 Unity EditMode 测试并确认变绿**
 
 ```powershell
-git status --short
-git ls-files Library Temp Logs UserSettings '*.sln' '*.slnx' '*.csproj'
-```
-
-预期：
-
-- `git status` 只显示允许的 Unity 项目文件。
-- 第二条命令没有输出。
-
-- [ ] **Step 9：提交 Unity 项目宿主**
-
-```powershell
-git add Assets Packages ProjectSettings
-git commit -m "feat: migrate CardGame Unity project host"
-```
-
----
-
-### Task 4：建立最小纯 C# 程序集与 EditMode 冒烟测试
-
-**文件：**
-
-- 创建：`Assets/CardGame/Runtime.meta`
-- 创建：`Assets/CardGame/Runtime/CardGame.Runtime.asmdef`
-- 创建：`Assets/CardGame/Runtime/ProjectIdentity.cs`
-- 创建：上述文件对应 `.meta`
-- 创建：`Assets/CardGame/Tests.meta`
-- 创建：`Assets/CardGame/Tests/EditMode.meta`
-- 创建：`Assets/CardGame/Tests/EditMode/CardGame.Tests.EditMode.asmdef`
-- 创建：`Assets/CardGame/Tests/EditMode/ProjectFoundationTests.cs`
-- 创建：上述文件对应 `.meta`
-
-**接口：**
-
-- 提供：`CardGame.ProjectIdentity.ProductName`
-- 提供：`CardGame.ProjectIdentity.CompanyName`
-- 测试程序集引用：`CardGame.Runtime`
-
-- [ ] **Step 1：创建测试程序集和失败测试**
-
-创建 `Assets/CardGame/Tests/EditMode/CardGame.Tests.EditMode.asmdef`：
-
-```json
-{
-  "name": "CardGame.Tests.EditMode",
-  "rootNamespace": "CardGame.Tests.EditMode",
-  "references": [
-    "CardGame.Runtime"
-  ],
-  "includePlatforms": [
-    "Editor"
-  ],
-  "optionalUnityReferences": [
-    "TestAssemblies"
-  ],
-  "autoReferenced": false
-}
-```
-
-创建 `Assets/CardGame/Tests/EditMode/ProjectFoundationTests.cs`：
-
-```csharp
-using System.Linq;
-using NUnit.Framework;
-using UnityEditor;
-
-namespace CardGame.Tests.EditMode
-{
-    public sealed class ProjectFoundationTests
-    {
-        [Test]
-        public void ProjectIdentity_MatchesPlayerSettings()
-        {
-            Assert.That(ProjectIdentity.ProductName, Is.EqualTo("CardGame"));
-            Assert.That(ProjectIdentity.CompanyName, Is.EqualTo("E-Dawnize"));
-            Assert.That(PlayerSettings.productName, Is.EqualTo(ProjectIdentity.ProductName));
-            Assert.That(PlayerSettings.companyName, Is.EqualTo(ProjectIdentity.CompanyName));
-        }
-
-        [Test]
-        public void Bootstrap_IsFirstEnabledBuildScene()
-        {
-            var scene = EditorBuildSettings.scenes.First(item => item.enabled);
-            Assert.That(
-                scene.path,
-                Is.EqualTo("Assets/CardGame/Scenes/Bootstrap.unity"));
-        }
-    }
-}
-```
-
-- [ ] **Step 2：运行 Unity 并确认测试先失败**
-
-```powershell
-$env:UNITY_EDITOR='C:\Program Files\Unity\Hub\Editor\6000.3.10f1\Editor\Unity.exe'
-$redResult = Join-Path ([IO.Path]::GetTempPath()) `
-  'CardGame-foundation-red.xml'
-& $env:UNITY_EDITOR -batchmode -nographics -quit `
-  -projectPath 'D:\Unity Project\CardGame' `
-  -runTests -testPlatform EditMode `
-  -testResults $redResult `
-  -logFile 'D:\Unity Project\CardGame\Logs\foundation-red.log'
-```
-
-预期：Unity 返回非零退出码，日志指出缺少 `CardGame.Runtime` 或
-`ProjectIdentity`。`Logs/` 不得加入 Git。
-
-- [ ] **Step 3：实现最小运行时程序集**
-
-创建 `Assets/CardGame/Runtime/CardGame.Runtime.asmdef`：
-
-```json
-{
-  "name": "CardGame.Runtime",
-  "rootNamespace": "CardGame",
-  "references": [],
-  "autoReferenced": true,
-  "noEngineReferences": true
-}
-```
-
-创建 `Assets/CardGame/Runtime/ProjectIdentity.cs`：
-
-```csharp
-namespace CardGame
-{
-    public static class ProjectIdentity
-    {
-        public const string ProductName = "CardGame";
-        public const string CompanyName = "E-Dawnize";
-    }
-}
-```
-
-- [ ] **Step 4：运行 Unity EditMode 测试**
-
-```powershell
-$env:UNITY_EDITOR='C:\Program Files\Unity\Hub\Editor\6000.3.10f1\Editor\Unity.exe'
-$testResult = Join-Path ([IO.Path]::GetTempPath()) `
+$greenResult = Join-Path ([IO.Path]::GetTempPath()) `
   'CardGame-foundation-editmode.xml'
 & $env:UNITY_EDITOR -batchmode -nographics -quit `
-  -projectPath 'D:\Unity Project\CardGame' `
+  -projectPath $repoRoot `
   -runTests -testPlatform EditMode `
-  -testResults $testResult `
-  -logFile 'D:\Unity Project\CardGame\Logs\foundation-editmode.log'
+  -testResults $greenResult `
+  -logFile (Join-Path $repoRoot 'Logs\foundation-editmode.log')
 if ($LASTEXITCODE -ne 0) {
-  Get-Content 'D:\Unity Project\CardGame\Logs\foundation-editmode.log' -Tail 200
+  Get-Content (Join-Path $repoRoot 'Logs\foundation-editmode.log') -Tail 200
   exit $LASTEXITCODE
 }
 ```
 
 预期：2 项 EditMode 测试通过，Unity 返回退出码 0。
 
-- [ ] **Step 5：检查 Unity 生成的新增资源 `.meta`**
-
-Step 4 的 Unity 导入会为 Runtime、Tests、`.asmdef` 和 C# 文件生成 `.meta`。
-运行：
+- [ ] **Step 8：检查 Unity 生成的 `.meta` 和缓存忽略**
 
 ```powershell
 $requiredMeta = @(
-  'Assets\CardGame\Runtime.meta',
-  'Assets\CardGame\Runtime\CardGame.Runtime.asmdef.meta',
-  'Assets\CardGame\Runtime\ProjectIdentity.cs.meta',
+  'Assets\CardGame.meta',
   'Assets\CardGame\Tests.meta',
   'Assets\CardGame\Tests\EditMode.meta',
   'Assets\CardGame\Tests\EditMode\CardGame.Tests.EditMode.asmdef.meta',
@@ -735,25 +730,16 @@ foreach ($path in $requiredMeta) {
     throw "Unity did not generate required meta file: $path"
   }
 }
-```
-
-预期：所有路径存在且没有异常。生成的 `.meta` 必须与对应资源一起提交。
-
-- [ ] **Step 6：确认 Unity 生成物未被跟踪**
-
-```powershell
-git status --short
 git check-ignore Library Logs UserSettings
 ```
 
-预期：第二条命令显示这些路径均被 `.gitignore` 覆盖。
+预期：所有 `.meta` 存在，三个缓存路径均被忽略。
 
-- [ ] **Step 7：提交最小程序集和测试**
+- [ ] **Step 9：提交 CardGame 项目配置和测试**
 
 ```powershell
-git add Assets/CardGame/Runtime Assets/CardGame/Runtime.meta `
-  Assets/CardGame/Tests Assets/CardGame/Tests.meta
-git commit -m "test: add CardGame Unity foundation smoke tests"
+git add Assets ProjectSettings
+git commit -m "test: configure CardGame Unity project"
 ```
 
 ---
