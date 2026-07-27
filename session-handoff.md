@@ -1,63 +1,45 @@
 # Session Handoff
 
-## Current Objective
+## 当前目标
 
-- **Goal:** Project Harness foundation (feat-001).
-- **Current status:** Complete; no feature is currently active.
-- **Branch / commit:** `main` at `5da639d`; harness changes are uncommitted.
+- **目标：** CardGame Unity Project Host（feat-005）。
+- **当前状态：** 进行中；这是唯一处于 `in-progress` 的功能。
+- **分支 / 提交：** `codex/unity-project-host`，任务开始时 HEAD 为 `36f896b`。
 
-## Completed This Session
+## 本次已完成
 
-- Added all five Harness Engineering subsystems.
-- Vendored Superpowers v6.2.0 as 14 project-local skills.
-- Added a dependency-free portable repository verifier.
-- Added project-scoped Codex configuration for applicable Superpowers workflows.
-- Documented the missing Unity host and the known DI Unity null guard.
+- 已将 feat-002 的依赖改为 feat-005。
+- 已创建并激活 feat-005；其依赖为已完成的 feat-001。
+- 已记录迁移前便携 Harness 基线和既有验证限制。
 
-## Verification Evidence
+## 验证证据
 
-| Check | Command | Result | Notes |
+| 检查 | 命令 | 结果 | 说明 |
 |---|---|---|---|
-| Portable harness | `node scripts/harness/verify.mjs` | Pass | 21 passed, 2 warnings, 0 failures |
-| Reference structural audit | `node <harness-creator>/scripts/validate-harness.mjs --target .` | Pass | 100/100; every subsystem 5/5 |
-| Unity compile/tests | `node scripts/harness/verify.mjs --full` | Unavailable | Requires `UNITY_EDITOR` and `RAZOR_UNITY_PROJECT` |
+| 便携 Harness（修改前） | `node scripts/harness/verify.mjs` | 通过 | 21 passed, 2 warning(s), 0 failure(s) |
+| 工作区状态（修改前） | `git status --short --branch` | 干净 | `## codex/unity-project-host`，没有未提交文件 |
+| Unity 编译/测试 | `node scripts/harness/verify.mjs --full` | 未运行 | 本任务仅激活状态，不迁移 Unity 项目 |
 
-The portable warnings are expected and documented: the existing
-`DIContainer.cs` Unity null guard, and the absent consuming Unity test host.
+两项便携警告均为既有且已记录的限制：`DIContainer.cs` 的 Unity 空值判断，以及便携模式未运行
+Unity 编译/测试。
 
-## Files Changed
+## 本次文件变更
 
-- Root instructions and state: `AGENTS.md`, `feature_list.json`,
-  `feature_list.schema.json`, `progress.md`, `session-handoff.md`
-- Verification: `init.ps1`, `init.sh`, `scripts/harness/verify.mjs`
-- Codex/Superpowers: `.codex/config.toml`, `.agents/skills/`
-- Documentation and notices: `docs/HARNESS.md`,
-  `third_party/superpowers/`, `README.md`
+- `feature_list.json`：激活 feat-005，并将 feat-002 改为依赖 feat-005。
+- `progress.md`：记录当前功能、中文状态和修改前基线。
+- `session-handoff.md`：更新当前目标、验证证据与唯一下一步。
 
-## Decisions Made
+## 已确认决策
 
-- Skills are pinned and vendored for reproducibility.
-- The harness does not install dependencies or run hidden hooks.
-- Unity-dependent completion claims require evidence from a consuming Unity
-  project; portable checks alone are not enough.
-- The known DI null guard is fingerprinted as a warning and tracked by feat-002;
-  additional DI Unity references fail verification.
+- 先完成 Unity 项目宿主迁移，再处理 feat-002 的纯 C# DI 边界。
+- 本功能仅迁移获批准的 Unity 6000.3.10f1 项目基底，不编译旧框架。
+- Unity 相关完成声明仍需在 Unity 6000.3.10f1 中取得 EditMode 证据；便携 Harness 不足以替代该证据。
 
-## Blockers / Risks
+## 风险与限制
 
-- There is no local Unity host project, `.sln`, or `.csproj`.
-- Project skills installed during this task become automatically available in a
-  new task, not retroactively in the current task.
+- 当前工作树尚未迁入 Unity 项目宿主；Unity 编译和 EditMode 测试将在后续 feat-005 工作中建立。
+- 已知 `DIContainer.cs` Unity 空值判断仍由 feat-002 跟踪，不属于本任务变更范围。
 
-## Next Session Startup
+## 下一步
 
-1. Read `AGENTS.md`.
-2. Read `feature_list.json`, `progress.md`, and this handoff.
-3. Run `node scripts/harness/verify.mjs`.
-4. Select one unfinished feature before implementation.
-
-## Recommended Next Step
-
-Start feat-002: design a Unity-object liveness adapter or caller-side guard that
-keeps `DI/` free of compile-time `UnityEngine` references, then validate it
-in a consuming Unity project.
+创建 Unity 项目结构验证器，并先用 Node 测试固定迁移契约。

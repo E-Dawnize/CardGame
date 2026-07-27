@@ -19,7 +19,7 @@
       "id": "feat-002",
       "name": "Pure C# DI Boundary",
       "description": "Remove the direct UnityEngine.Object null guard from DIContainer without losing destroyed-Unity-object safety.",
-      "dependencies": ["feat-001"],
+      "dependencies": ["feat-005"],
       "status": "not-started",
       "doneCriteria": [
         "DI contains no compile-time UnityEngine reference",
@@ -51,6 +51,21 @@
         "A clean checkout can invoke the Unity test path",
         "DI, event, lifecycle, and command behavior has automated coverage",
         "Test results can be recorded as harness evidence"
+      ],
+      "evidence": ""
+    },
+    {
+      "id": "feat-005",
+      "name": "CardGame Unity Project Host",
+      "description": "Migrate the approved Unity 6000.3.10f1 project substrate into CardGame and establish a repeatable EditMode verification host without compiling the legacy framework.",
+      "dependencies": ["feat-001"],
+      "status": "in-progress",
+      "doneCriteria": [
+        "CardGame contains the approved Assets, Packages, and ProjectSettings roots without Unity-generated caches",
+        "Project identity and Bootstrap scene paths are normalized for CardGame",
+        "Unity EditMode smoke tests validate the approved project identity and Bootstrap build-scene configuration in Unity 6000.3.10f1",
+        "Portable and full Harness verification pass from the CardGame repository root",
+        "README, Harness documentation, progress, and handoff describe the Unity-host workflow in Chinese"
       ],
       "evidence": ""
     }

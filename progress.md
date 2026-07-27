@@ -1,78 +1,45 @@
 # Session Progress Log
 
-## Current State
+## 当前状态
 
-**Last Updated:** 2026-07-26 23:34 +08:00  
-**Active Feature:** None  
-**Status:** feat-001 complete; next candidate is feat-002
+**最后更新：** 2026-07-27 +08:00
+**当前功能：** feat-005 CardGame Unity Project Host
+**状态：** 进行中
 
-## What's Done
+迁移功能已激活。修改前基线：`node scripts/harness/verify.mjs` 于 2026-07-27 通过，结果为
+21 passed、2 warning(s)、0 failure(s)。两项既有警告分别为 `DI/DIContainer.cs` 的 Unity
+空值判断债务（由 feat-002 跟踪）以及便携模式未运行 Unity 编译/测试；工作区没有未提交文件。
 
-- [x] Inspected the source-only Unity framework and existing documentation.
-- [x] Added all five Harness Engineering subsystems.
-- [x] Vendored all 14 Superpowers v6.2.0 skills into `.agents/skills/`.
-- [x] Added project instructions, state/schema files, startup entrypoints, and
-  Codex project configuration.
-- [x] Added a portable verifier for state, skill provenance, module boundaries,
-  and repository whitespace.
-- [x] Recorded the existing DI-to-Unity null-guard dependency as feat-002.
-- [x] Passed both the portable verification and reference structural audit.
+## 已完成
 
-## What's In Progress
+- feat-001 Project Harness Foundation 已完成。
+- feat-002 已改为依赖 feat-005。
+- feat-005 已激活，且为唯一 `in-progress` 功能。
 
-- Nothing. Select one unfinished feature before implementation.
+## 正在进行
 
-## What's Next
+- feat-005 CardGame Unity Project Host：迁移获批准的 Unity 6000.3.10f1 项目基底，建立可重复的
+  EditMode 验证宿主；迁移期间不编译旧框架。
 
-1. Remove the direct `UnityEngine.Object` dependency from DI without losing
-   destroyed-object safety (feat-002).
-2. Add Assembly Definition boundaries (feat-003).
-3. Establish a consuming Unity test project and EditMode coverage (feat-004).
+## 下一步
 
-## Blockers / Risks
+1. 创建 Unity 项目结构验证器，并先用 Node 测试固定迁移契约。
 
-- This repository has no Unity project manifest, solution, or project file, so
-  Unity compilation and EditMode/PlayMode tests cannot run inside this checkout.
-- `DI/DIContainer.cs` has one known direct `UnityEngine.Object` null guard.
-  The verifier warns for this exact statement and rejects additional DI Unity
-  references.
-- The vendored project skills are discovered when a new Codex task starts; the
-  current task predates their installation.
+## 风险与限制
 
-## Decisions Made
+- 当前工作树尚未迁入 Unity 项目宿主，因此 Unity 编译和 EditMode 测试尚未运行。
+- `DI/DIContainer.cs` 的已知 Unity 空值判断仍由 feat-002 跟踪，不属于本任务变更范围。
 
-- **Project-local skills:** Vendor a pinned Superpowers release so every
-  checkout receives the same workflows without relying on a personal install.
-- **No automatic hooks:** Keep startup explicit and auditable through
-  `init.ps1`, `init.sh`, and `scripts/harness/verify.mjs`.
-- **Portable baseline:** Use a dependency-free Node verifier across Windows,
-  macOS, and Linux.
-- **Honest verification boundary:** Treat structural checks as necessary but
-  insufficient for Unity-dependent changes.
-- **Known-debt fingerprint:** Allow only the existing DI null guard as a warning
-  until feat-002 removes it; new boundary violations remain failures.
+## 已确认决策
 
-## Files Modified This Session
+- 先完成 Unity 项目宿主迁移，再处理 feat-002 的纯 C# DI 边界。
+- Unity 相关完成声明必须在 Unity 6000.3.10f1 中取得 EditMode 证据；便携 Harness 不可替代该证据。
 
-- `AGENTS.md` - Durable project rules and verification gates.
-- `.agents/skills/` - Pinned Superpowers skill library.
-- `.codex/config.toml` - Multi-agent capability for authorized workflows.
-- `feature_list.json`, `feature_list.schema.json` - Scoped feature state.
-- `progress.md`, `session-handoff.md` - Cross-session continuity.
-- `init.ps1`, `init.sh`, `scripts/harness/verify.mjs` - Verification paths.
-- `docs/HARNESS.md`, `third_party/superpowers/` - Operations and attribution.
-- `README.md` - Harness entrypoint.
+## 本次文件变更
 
-## Verification Evidence
+- `feature_list.json`、`progress.md`、`session-handoff.md`。
 
-- [x] Portable check: `node scripts/harness/verify.mjs`
-  - Result: 21 passed, 2 documented warnings, 0 failures.
-- [x] Structural audit:
-  `node <harness-creator>/scripts/validate-harness.mjs --target .`
-  - Result: 100/100; all five subsystems scored 5/5.
-- [ ] Unity compilation/tests: unavailable until feat-004 provides a host.
+## 验证证据
 
-## Notes for Next Session
-
-Start a new Codex task so the project-local skills are discovered, run
-`node scripts/harness/verify.mjs`, then select exactly one unfinished feature.
+- [x] 便携检查：`node scripts/harness/verify.mjs`；修改前结果为 21 passed、2 warning(s)、0 failure(s)。
+- [ ] Unity 编译/测试：本任务仅激活状态，未运行。
