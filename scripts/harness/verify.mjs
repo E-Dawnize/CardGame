@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 
 import { spawnSync } from "node:child_process";
-import { readFile, readdir } from "node:fs/promises";
+import { randomUUID } from "node:crypto";
+import { readFile, readdir, rm } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import process from "node:process";
@@ -287,6 +288,118 @@ function run(command, args, capture, timeout) {
   });
 }
 
+export function buildUnityEditModeArgs(projectPath, resultPath) {
+  return [
+    "-batchmode",
+    "-nographics",
+    "-projectPath",
+    projectPath,
+    "-runTests",
+    "-testPlatform",
+    "EditMode",
+    "-testResults",
+    resultPath,
+    "-logFile",
+    "-"
+  ];
+}
+
+function parseAttributes(openingTag) {
+  const attributes = new Map();
+  const pattern = /([A-Za-z_:][\w:.-]*)\s*=\s*(["'])(.*?)\2/g;
+  for (let match = pattern.exec(openingTag); match; match = pattern.exec(openingTag)) {
+    attributes.set(match[1], match[3]);
+  }
+  return attributes;
+}
+
+export function validateUnityTestResults(xml) {
+  const match = xml.match(/<test-run\b[^>]*>/i);
+  if (!match) {
+    return { ok: false, message: "Unity EditMode result XML has no <test-run> root" };
+  }
+
+  const attributes = parseAttributes(match[0]);
+  const total = Number.parseInt(attributes.get("total") ?? "", 10);
+  const failed = Number.parseInt(attributes.get("failed") ?? "", 10);
+  const result = attributes.get("result") ?? "";
+
+  if (!Number.isInteger(total)) {
+    return { ok: false, message: "Unity EditMode result XML has no numeric total" };
+  }
+  if (!Number.isInteger(failed)) {
+    return { ok: false, message: "Unity EditMode result XML has no numeric failed count" };
+  }
+  if (total === 0) {
+    return { ok: false, message: "Unity EditMode reported zero tests; verify the EditMode test assembly is included" };
+  }
+  if (failed > 0) {
+    return { ok: false, message: "Unity EditMode reported " + failed + " failed test(s); inspect the result XML" };
+  }
+  if (result.toLowerCase() !== "passed") {
+    return { ok: false, message: "Unity EditMode result is " + (result || "missing") + "; inspect the result XML" };
+  }
+
+  return { ok: true, total, failed };
+}
+
+export async function runUnityEditMode({
+  editor,
+  projectPath,
+  resultPath = path.join(os.tmpdir(), "CardGame-EditMode-" + process.pid + "-" + randomUUID() + ".xml"),
+  runner = run
+}) {
+  try {
+    await rm(resultPath, { force: true });
+  } catch (error) {
+    return {
+      ok: false,
+      message: "Could not prepare Unity EditMode result path " + resultPath + ": " + error.message
+    };
+  }
+
+  const result = runner(
+    editor,
+    buildUnityEditModeArgs(projectPath, resultPath),
+    false,
+    30 * 60 * 1000
+  );
+
+  if (result.error) {
+    return {
+      ok: false,
+      message: "Unity EditMode runner could not start: " + result.error.message
+    };
+  }
+  if (result.signal) {
+    return {
+      ok: false,
+      message: "Unity EditMode runner ended from signal " + result.signal
+    };
+  }
+  if (result.status !== 0) {
+    return {
+      ok: false,
+      message: "Unity EditMode runner failed with exit code " + (result.status ?? "unknown")
+    };
+  }
+
+  let xml;
+  try {
+    xml = await readFile(resultPath, "utf8");
+  } catch {
+    return {
+      ok: false,
+      message: "Unity EditMode result XML is missing at " + resultPath + "; inspect Unity output"
+    };
+  }
+
+  const verdict = validateUnityTestResults(xml);
+  return verdict.ok
+    ? { ...verdict, resultPath }
+    : { ...verdict, resultPath, message: verdict.message + " (" + resultPath + ")" };
+}
+
 function checkGitDiff() {
   const result = run("git", ["diff", "--check"], true);
   if (result.error) {
@@ -307,36 +420,17 @@ async function fullChecks() {
     return;
   }
 
-  const resultPath = path.join(os.tmpdir(), "CardGame-EditMode-results.xml");
-  const result = run(
-    editor,
-    [
-      "-batchmode",
-      "-nographics",
-      "-projectPath",
-      projectPath,
-      "-runTests",
-      "-testPlatform",
-      "EditMode",
-      "-testResults",
-      resultPath,
-      "-logFile",
-      "-"
-    ],
-    false,
-    30 * 60 * 1000
-  );
-
-  if (result.status === 0) {
-    pass("Unity EditMode tests passed (" + resultPath + ")");
+  const outcome = await runUnityEditMode({ editor, projectPath });
+  if (outcome.ok) {
+    pass("Unity EditMode tests passed (" + outcome.total + " tests, " + outcome.resultPath + ")");
   } else {
-    fail("Unity EditMode tests failed with exit code " + (result.status ?? "unknown"));
+    fail(outcome.message);
   }
 }
 
 async function main() {
   process.chdir(ROOT);
-  console.log("RazorFramework harness verification: " + ROOT);
+  console.log("CardGame harness verification: " + ROOT);
   console.log("Mode: " + (FULL ? "full" : "portable"));
   console.log("");
 
@@ -404,4 +498,7 @@ async function main() {
   }
 }
 
-await main();
+const invokedPath = process.argv[1] ? path.resolve(process.argv[1]) : "";
+if (invokedPath === fileURLToPath(import.meta.url)) {
+  await main();
+}
