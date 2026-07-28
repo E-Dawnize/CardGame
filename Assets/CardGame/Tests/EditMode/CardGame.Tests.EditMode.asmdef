@@ -1,0 +1,12 @@
+{
+  "name": "CardGame.Tests.EditMode",
+  "rootNamespace": "CardGame.Tests.EditMode",
+  "references": [],
+  "includePlatforms": [
+    "Editor"
+  ],
+  "optionalUnityReferences": [
+    "TestAssemblies"
+  ],
+  "autoReferenced": false
+}
