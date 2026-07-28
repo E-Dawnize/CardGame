@@ -107,3 +107,6 @@ InitTestScene*.unity*
 
 # Isolated Codex/Superpowers implementation worktrees
 /.worktrees/
+
+# VS Code workspace settings generated locally
+.vscode/
