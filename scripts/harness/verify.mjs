@@ -7,6 +7,8 @@ import path from "node:path";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
 
+import { inspectUnityProject } from "./unity-project.mjs";
+
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
 const FULL = process.argv.includes("--full");
 const failures = [];
@@ -200,6 +202,17 @@ async function checkSuperpowers() {
   }
 }
 
+async function checkUnityProjectHost() {
+  const result = await inspectUnityProject(ROOT);
+  if (result.problems.length > 0) {
+    for (const problem of result.problems) {
+      fail("Unity host: " + problem);
+    }
+    return;
+  }
+  pass("CardGame Unity project host validated");
+}
+
 async function checkCSharpBoundaries() {
   const modules = new Map([
     ["DI", "RazorFramework.DI"],
@@ -287,35 +300,19 @@ function checkGitDiff() {
 }
 
 async function fullChecks() {
-  const rootEntries = await readdir(ROOT);
-  const buildFile = rootEntries.find(
-    (name) => name.endsWith(".sln") || name.endsWith(".csproj")
-  );
-
-  if (buildFile) {
-    const result = run("dotnet", ["test", "--nologo"], false);
-    result.status === 0 ? pass("dotnet test passed") : fail("dotnet test failed");
-  } else {
-    warn("No root .sln or .csproj; standalone .NET tests were not run");
-  }
-
   const editor = process.env.UNITY_EDITOR;
-  const projectPath = process.env.RAZOR_UNITY_PROJECT;
-  if (!editor || !projectPath) {
-    warn(
-      "UNITY_EDITOR and RAZOR_UNITY_PROJECT are not both set; " +
-      "Unity EditMode tests were not run"
-    );
+  const projectPath = process.env.RAZOR_UNITY_PROJECT || ROOT;
+  if (!editor) {
+    warn("UNITY_EDITOR is not set; Unity EditMode tests were not run");
     return;
   }
 
-  const resultPath = path.join(os.tmpdir(), "RazorFramework-EditMode-results.xml");
+  const resultPath = path.join(os.tmpdir(), "CardGame-EditMode-results.xml");
   const result = run(
     editor,
     [
       "-batchmode",
       "-nographics",
-      "-quit",
       "-projectPath",
       projectPath,
       "-runTests",
@@ -384,6 +381,7 @@ async function main() {
   }
 
   await checkSuperpowers();
+  await checkUnityProjectHost();
   await checkCSharpBoundaries();
   checkGitDiff();
 
@@ -392,7 +390,7 @@ async function main() {
   } else {
     warn(
       "Unity compilation/tests were not run in portable mode; " +
-      "use --full with a configured consuming project"
+      "use --full after setting UNITY_EDITOR"
     );
   }
 
