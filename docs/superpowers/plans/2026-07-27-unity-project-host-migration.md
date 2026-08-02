@@ -850,6 +850,8 @@ if (!editor) {
 warn("UNITY_EDITOR is not set; Unity EditMode tests were not run");
 ```
 
+> **最终审查纠正（2026-08-02）：** 上述 `warn(...)` 是历史实施草案，不再是最终契约。显式执行 `--full` 且缺少 `UNITY_EDITOR` 时必须调用 `fail(...)`，输出可行动的 Unity `6000.3.10f1` 设置提示，并以非零状态退出。完整验证还必须读取本次新生成且完整闭合的 `<test-run>` XML；只有 `result=Passed`、`total>0`、`passed>0`、`failed=0` 且分类计数一致时才可通过。
+
 删除根据根目录 `.sln` 或 `.csproj` 自动运行 `dotnet test` 的逻辑。
 Unity 生成的解决方案不是独立 .NET 测试宿主，不能作为该检查的触发条件。
 

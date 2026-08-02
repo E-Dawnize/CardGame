@@ -17,7 +17,7 @@
 
 | 检查 | 命令 | 实际结果 |
 |---|---|---|
-| Node 契约测试 | `node --test scripts/harness/tests/*.test.mjs` | 14/14 通过，0 失败 |
+| Node 契约测试 | `node --test scripts/harness/tests/*.test.mjs` | 25/25 通过，0 失败 |
 | 便携 Harness | `node scripts/harness/verify.mjs` | 22 passed、2 warning(s)、0 failure(s) |
 | Unity 完整 Harness | `$env:UNITY_EDITOR='C:\Program Files\Unity\Hub\Editor\6000.3.10f1\Editor\Unity.exe'; node scripts/harness/verify.mjs --full` | 23 passed、1 warning(s)、0 failure(s) |
 | Unity EditMode XML | 完整 Harness 新生成的结果 XML | `result=Passed`、`total=3`、`passed=3`、`failed=0` |
@@ -34,3 +34,9 @@
 ## 下一步
 
 1. 为 RazorFramework Core、DI 与 Lifecycle 编写独立重构规格和实施计划，先消除 DI 对 `UnityEngine` 的编译时依赖。
+
+## 最终审查修复证据
+
+- 显式执行 `node scripts/harness/verify.mjs --full` 且清除 `UNITY_EDITOR` 时，命令输出 `[FAIL]` 与 Unity `6000.3.10f1` 设置提示，并以非零状态退出；完整模式不再以“未运行”警告假绿。
+- Unity 结果验证使用栈式 XML 解析，拒绝内部标签未闭合或错配、多个根元素、重复属性、DOCTYPE、根外非空文本、非整数计数、超出 JavaScript 安全整数范围的计数与分类计数矛盾；实际 Unity 新鲜 XML 仍为 `result=Passed`、`total=3`、`passed=3`、`failed=0`。
+- 最终 Node 契约测试为 25/25 通过；便携 Harness 为 22 passed、2 warning(s)、0 failure(s)；真实 Unity 完整 Harness 为 23 passed、1 warning(s)、0 failure(s)。

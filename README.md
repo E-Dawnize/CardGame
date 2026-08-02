@@ -37,6 +37,8 @@ node scripts/harness/verify.mjs --full
 
 完整模式默认把当前仓库作为 Unity 项目路径，`UNITY_EDITOR` 是唯一必需的环境变量。只有在验证另一个兼容宿主时，才设置可选的 `RAZOR_UNITY_PROJECT`。完整验证同时要求 Unity 进程成功退出、生成新的结果 XML，且 XML 显示至少一个通过且没有失败的测试。
 
+显式执行 `--full` 表示调用方要求取得 Unity 运行证据。如果没有设置 `UNITY_EDITOR`，Harness 会输出 `[FAIL]`、给出设置 Unity `6000.3.10f1` 可执行文件的提示，并以非零状态退出；只有便携模式允许不启动编辑器。结果 XML 还必须完整闭合，且 `total`、`passed`、`failed`、`skipped` 与 `inconclusive` 计数自洽。
+
 详细工作流见 [Harness 维护指南](docs/HARNESS.md)。开始实质工作前，请阅读 [AGENTS.md](AGENTS.md)、`feature_list.json`、`progress.md` 与 `session-handoff.md`。
 
 ## 版本控制边界

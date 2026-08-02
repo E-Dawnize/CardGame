@@ -9,6 +9,7 @@ import process from "node:process";
 import { fileURLToPath } from "node:url";
 
 import { inspectUnityProject } from "./unity-project.mjs";
+import { parseXmlDocument } from "./xml.mjs";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
 const FULL = process.argv.includes("--full");
@@ -304,43 +305,79 @@ export function buildUnityEditModeArgs(projectPath, resultPath) {
   ];
 }
 
-function parseAttributes(openingTag) {
-  const attributes = new Map();
-  const pattern = /([A-Za-z_:][\w:.-]*)\s*=\s*(["'])(.*?)\2/g;
-  for (let match = pattern.exec(openingTag); match; match = pattern.exec(openingTag)) {
-    attributes.set(match[1], match[3]);
-  }
-  return attributes;
-}
-
 export function validateUnityTestResults(xml) {
-  const match = xml.match(/<test-run\b[^>]*>/i);
-  if (!match) {
-    return { ok: false, message: "Unity EditMode result XML has no <test-run> root" };
+  const document = parseXmlDocument(xml);
+  if (!document.ok) {
+    return {
+      ok: false,
+      message: "Unity EditMode result XML is not well-formed: " + document.error
+    };
+  }
+  if (document.root.name !== "test-run") {
+    return {
+      ok: false,
+      message: "Unity EditMode result XML root must be <test-run>, found <" + document.root.name + ">"
+    };
   }
 
-  const attributes = parseAttributes(match[0]);
-  const total = Number.parseInt(attributes.get("total") ?? "", 10);
-  const failed = Number.parseInt(attributes.get("failed") ?? "", 10);
+  const attributes = document.root.attributes;
+  const counts = {};
+  const maximum = BigInt(Number.MAX_SAFE_INTEGER);
+  for (const name of ["total", "passed", "failed", "inconclusive", "skipped"]) {
+    const raw = attributes.get(name);
+    if (raw === undefined && (name === "inconclusive" || name === "skipped")) {
+      counts[name] = 0n;
+      continue;
+    }
+    if (!/^\d+$/.test(raw ?? "")) {
+      return {
+        ok: false,
+        message: "Unity EditMode result XML attribute " + name +
+          " must be a non-negative decimal integer"
+      };
+    }
+    const value = BigInt(raw);
+    if (value > maximum) {
+      return {
+        ok: false,
+        message: "Unity EditMode result XML attribute " + name +
+          " exceeds Number.MAX_SAFE_INTEGER and is too large to report safely"
+      };
+    }
+    counts[name] = value;
+  }
+
   const result = attributes.get("result") ?? "";
-
-  if (!Number.isInteger(total)) {
-    return { ok: false, message: "Unity EditMode result XML has no numeric total" };
-  }
-  if (!Number.isInteger(failed)) {
-    return { ok: false, message: "Unity EditMode result XML has no numeric failed count" };
-  }
-  if (total === 0) {
+  if (counts.total === 0n) {
     return { ok: false, message: "Unity EditMode reported zero tests; verify the EditMode test assembly is included" };
   }
-  if (failed > 0) {
-    return { ok: false, message: "Unity EditMode reported " + failed + " failed test(s); inspect the result XML" };
+  if (counts.passed === 0n) {
+    return { ok: false, message: "Unity EditMode reported zero passed tests; inspect the result XML" };
+  }
+  if (counts.failed > 0n) {
+    return { ok: false, message: "Unity EditMode reported " + counts.failed + " failed test(s); inspect the result XML" };
   }
   if (result.toLowerCase() !== "passed") {
     return { ok: false, message: "Unity EditMode result is " + (result || "missing") + "; inspect the result XML" };
   }
 
-  return { ok: true, total, failed };
+  const categorized = counts.passed + counts.failed + counts.inconclusive + counts.skipped;
+  if (categorized !== counts.total) {
+    return {
+      ok: false,
+      message: "Unity EditMode result counts are inconsistent: total=" + counts.total +
+        ", categorized=" + categorized + "; inspect the result XML"
+    };
+  }
+
+  return {
+    ok: true,
+    total: Number(counts.total),
+    passed: Number(counts.passed),
+    failed: Number(counts.failed),
+    inconclusive: Number(counts.inconclusive),
+    skipped: Number(counts.skipped)
+  };
 }
 
 export async function runUnityEditMode({
@@ -416,7 +453,10 @@ async function fullChecks() {
   const editor = process.env.UNITY_EDITOR;
   const projectPath = process.env.RAZOR_UNITY_PROJECT || ROOT;
   if (!editor) {
-    warn("UNITY_EDITOR is not set; Unity EditMode tests were not run");
+    fail(
+      "UNITY_EDITOR is required for --full; " +
+      "set UNITY_EDITOR to the Unity 6000.3.10f1 executable"
+    );
     return;
   }
 

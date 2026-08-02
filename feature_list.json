@@ -67,7 +67,7 @@
         "Portable and full Harness verification pass from the CardGame repository root",
         "README, Harness documentation, progress, and handoff describe the Unity-host workflow in Chinese"
       ],
-      "evidence": "2026-08-02: node --test scripts/harness/tests/*.test.mjs passed 14/14 tests; node scripts/harness/verify.mjs passed 22 checks with 2 documented warnings and 0 failures; with UNITY_EDITOR set to Unity 6000.3.10f1, node scripts/harness/verify.mjs --full passed 23 checks with 1 documented DI warning and 0 failures, including EditMode XML result=Passed, total=3, passed=3, failed=0; git diff --check was clean."
+      "evidence": "2026-08-02 final review: node --test scripts/harness/tests/*.test.mjs passed 25/25 tests, including strict stack-based XML parsing cases for malformed nesting, multiple roots, duplicate attributes, unsafe integer counts, and overflow-shaped values; explicit --full without UNITY_EDITOR exited nonzero with an actionable [FAIL]; node scripts/harness/verify.mjs passed 22 checks with 2 documented warnings and 0 failures; with UNITY_EDITOR set to Unity 6000.3.10f1, node scripts/harness/verify.mjs --full passed 23 checks with 1 documented DI warning and 0 failures, including a complete and internally consistent EditMode XML result=Passed, total=3, passed=3, failed=0; git diff --check was clean."
     }
   ]
 }

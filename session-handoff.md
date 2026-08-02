@@ -16,7 +16,7 @@
 
 | 检查 | 结果 |
 |---|---|
-| `node --test scripts/harness/tests/*.test.mjs` | 14/14 通过，0 失败 |
+| `node --test scripts/harness/tests/*.test.mjs` | 25/25 通过，0 失败 |
 | `node scripts/harness/verify.mjs` | 22 passed、2 warning(s)、0 failure(s) |
 | `UNITY_EDITOR='C:\Program Files\Unity\Hub\Editor\6000.3.10f1\Editor\Unity.exe'` 后运行 `node scripts/harness/verify.mjs --full` | 23 passed、1 warning(s)、0 failure(s)；EditMode XML：3/3 通过，0 失败 |
 | `git diff --check` | 干净 |
@@ -30,3 +30,9 @@
 ## 范围提醒
 
 玩法尚未实现：卡牌战斗、伤害结算、地图、叙事节点、存档、文案协作规则与数值模拟都必须在各自独立功能中设计、测试并验证。
+
+## 最终审查后的 Harness 契约
+
+- `--full` 明确要求 Unity 运行证据；未设置 `UNITY_EDITOR` 时必须 `[FAIL]` 且非零退出。
+- EditMode XML 必须是单根、内部标签正确嵌套且属性唯一的良构文档；计数必须是 JavaScript 安全整数，并满足 `total > 0`、`passed > 0`、`failed = 0` 与 `passed + failed + skipped + inconclusive = total`。
+- 最新证据：Node 测试 25/25；便携 Harness 22 passed、2 warning(s)、0 failure(s)；Unity 完整 Harness 23 passed、1 warning(s)、0 failure(s)，实际 XML 3/3 通过。

@@ -73,6 +73,8 @@ node scripts/harness/verify.mjs --full
 
 完整模式默认检查当前仓库；`RAZOR_UNITY_PROJECT` 只是可选的兼容宿主覆盖路径。Harness 不会把 Unity 自动生成的 `.sln` 或 `.csproj` 当成独立 `.NET` 测试入口。完整模式会要求 Unity 退出成功，并验证新生成的 EditMode XML 至少包含一个通过且没有失败的测试。
 
+显式运行 `--full` 时，缺少 `UNITY_EDITOR` 是硬失败而不是可忽略警告：命令必须输出 `[FAIL]` 并返回非零状态。不得在没有 Unity 运行证据时把完整验证记为通过。Unity 结果 XML 必须完整闭合，至少有一个通过测试、没有失败测试，并且分类计数与 `total` 一致。
+
 ## 完成条件
 
 功能完成前，适用项必须全部满足：

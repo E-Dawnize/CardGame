@@ -70,6 +70,8 @@ node scripts/harness/verify.mjs --full
 
 Harness 有意不传 `-quit`，避免 Unity 在测试运行前被提前终止。每次完整运行会生成唯一的临时 XML 路径，并在启动 Unity 前清理该路径；只有 Unity 退出码为 0，且新 XML 的 `<test-run>` 同时满足 `result="Passed"`、`total > 0`、`failed = 0` 时，Harness 才报告成功。缺少 XML、零测试、失败测试、进程启动错误、信号退出或非零退出码都会给出可行动的失败消息。
 
+显式 `--full` 代表请求完整证据；如果未设置 `UNITY_EDITOR`，Harness 会输出 `[FAIL]`、提示设置 Unity `6000.3.10f1` 可执行文件并返回非零状态。这个行为与便携模式不同：便携模式不要求编辑器，只会说明没有运行 Unity。完整模式使用小型栈式解析器验证 XML 的单根结构、内部标签嵌套与属性唯一性，并拒绝 DOCTYPE、根外非空文本、`passed=0`、非十进制整数、超出 JavaScript 安全整数范围的计数，以及 `total` 与 `passed + failed + skipped + inconclusive` 不一致的结果。
+
 Harness 不依据 Unity 自动生成的 `.sln` 或 `.csproj` 触发 `dotnet test`，因为它们不是 CardGame 的独立测试宿主。
 
 ## 维护规则
