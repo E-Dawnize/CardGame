@@ -1,52 +1,36 @@
-# Session Progress Log
+# 项目进度记录
 
 ## 当前状态
 
-**最后更新：** 2026-07-27 +08:00
-**当前功能：** feat-005 CardGame Unity Project Host
-**状态：** 进行中
+**最后更新：** 2026-08-02 +08:00
+**当前功能：** 无；feat-005 CardGame Unity Project Host 已完成。
+**状态：** 等待下一项独立功能立项。
 
-迁移功能已激活。修改前基线：`node scripts/harness/verify.mjs` 于 2026-07-27 通过，结果为
-21 passed、2 warning(s)、0 failure(s)。两项既有警告分别为 `DI/DIContainer.cs` 的 Unity
-空值判断债务（由 feat-002 跟踪）以及便携模式未运行 Unity 编译/测试；工作区没有未提交文件。
+## 本次完成
 
-## 已完成
+- 完成 Unity `6000.3.10f1` 项目宿主迁移与验证；允许迁入的项目根目录为 `Assets/`、`Packages/` 与 `ProjectSettings/`，并保留所需 `.meta` 文件。
+- 模板场景与设置已归入 `Assets/CardGame/`：首个启用构建场景为 `Assets/CardGame/Scenes/Bootstrap.unity`；项目身份为 `E-Dawnize / CardGame`，Standalone identifier 为 `com.edawnize.cardgame`。
+- Harness 已固定验证 Unity 版本、项目身份、首个启用场景和四个关键包版本：URP `17.3.0`、Input System `1.18.0`、Unity Test Framework `1.6.0`、UGUI `2.0.0`。
+- 旧 RazorFramework 源码仍位于仓库根目录，只作为后续重构输入；本次未将其迁入 `Assets/Plugins/RazorFramework/`，因此不属于 Unity 编译对象。
 
-- feat-001 Project Harness Foundation 已完成。
-- feat-002 已改为依赖 feat-005。
-- feat-005 已激活，且为唯一 `in-progress` 功能。
+## 最终验证证据（2026-08-02）
 
-## 正在进行
+| 检查 | 命令 | 实际结果 |
+|---|---|---|
+| Node 契约测试 | `node --test scripts/harness/tests/*.test.mjs` | 14/14 通过，0 失败 |
+| 便携 Harness | `node scripts/harness/verify.mjs` | 22 passed、2 warning(s)、0 failure(s) |
+| Unity 完整 Harness | `$env:UNITY_EDITOR='C:\Program Files\Unity\Hub\Editor\6000.3.10f1\Editor\Unity.exe'; node scripts/harness/verify.mjs --full` | 23 passed、1 warning(s)、0 failure(s) |
+| Unity EditMode XML | 完整 Harness 新生成的结果 XML | `result=Passed`、`total=3`、`passed=3`、`failed=0` |
+| 差异检查 | `git diff --check` | 无输出，退出码 0 |
 
-- feat-005 CardGame Unity Project Host：迁移获批准的 Unity 6000.3.10f1 项目基底，建立可重复的
-  EditMode 验证宿主；迁移期间不编译旧框架。
+完整验证实际使用 Unity `6000.3.10f1`。首次导入后的工作树保持干净，`Packages/packages-lock.json` 没有额外差异；`Library/`、`Temp/`、`Logs/`、`UserSettings/`、`.sln`、`.slnx` 与 `.csproj` 均未被 Git 跟踪。
+
+## 已知限制与后续边界
+
+- 便携模式仍保留两项预期警告：`DI/DIContainer.cs` 的 Unity 空值判断债务（由 feat-002 跟踪）以及未运行 Unity；完整模式已实际完成 Unity 编译与 EditMode 测试，只保留前者警告。
+- 本功能未精简模板包；包精简必须在独立功能中以导入测试保护。
+- 本功能只建立项目宿主、迁移基底和验证基础设施，尚未实现卡牌战斗、地图、剧情、存档、文案内容管线或数值模拟。
 
 ## 下一步
 
-1. 创建 Unity 项目结构验证器，并先用 Node 测试固定迁移契约。
-
-## 风险与限制
-
-- 当前工作树尚未迁入 Unity 项目宿主，因此 Unity 编译和 EditMode 测试尚未运行。
-- `DI/DIContainer.cs` 的已知 Unity 空值判断仍由 feat-002 跟踪，不属于本任务变更范围。
-
-## 已确认决策
-
-- 先完成 Unity 项目宿主迁移，再处理 feat-002 的纯 C# DI 边界。
-- Unity 相关完成声明必须在 Unity 6000.3.10f1 中取得 EditMode 证据；便携 Harness 不可替代该证据。
-
-## 本次文件变更
-
-- `feature_list.json`、`progress.md`、`session-handoff.md`。
-
-## 验证证据
-
-- [x] 便携检查：`node scripts/harness/verify.mjs`；修改前结果为 21 passed、2 warning(s)、0 failure(s)。
-- [ ] Unity 编译/测试：本任务仅激活状态，未运行。
-
-## 修改后验证
-
-- 修改前基线：`node scripts/harness/verify.mjs`，结果为 21 passed、2 warning(s)、0 failure(s)。
-- 修改后命令：`node scripts/harness/verify.mjs`。
-- 修改后实际结果：21 passed、2 warning(s)、0 failure(s)。
-- 修改后状态解析：`Feature state parsed (5 features, 1 in progress)`。
+1. 为 RazorFramework Core、DI 与 Lifecycle 编写独立重构规格和实施计划，先消除 DI 对 `UnityEngine` 的编译时依赖。

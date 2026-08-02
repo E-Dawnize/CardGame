@@ -59,7 +59,7 @@
       "name": "CardGame Unity Project Host",
       "description": "Migrate the approved Unity 6000.3.10f1 project substrate into CardGame and establish a repeatable EditMode verification host without compiling the legacy framework.",
       "dependencies": ["feat-001"],
-      "status": "in-progress",
+      "status": "done",
       "doneCriteria": [
         "CardGame contains the approved Assets, Packages, and ProjectSettings roots without Unity-generated caches",
         "Project identity and Bootstrap scene paths are normalized for CardGame",
@@ -67,7 +67,7 @@
         "Portable and full Harness verification pass from the CardGame repository root",
         "README, Harness documentation, progress, and handoff describe the Unity-host workflow in Chinese"
       ],
-      "evidence": ""
+      "evidence": "2026-08-02: node --test scripts/harness/tests/*.test.mjs passed 14/14 tests; node scripts/harness/verify.mjs passed 22 checks with 2 documented warnings and 0 failures; with UNITY_EDITOR set to Unity 6000.3.10f1, node scripts/harness/verify.mjs --full passed 23 checks with 1 documented DI warning and 0 failures, including EditMode XML result=Passed, total=3, passed=3, failed=0; git diff --check was clean."
     }
   ]
 }
