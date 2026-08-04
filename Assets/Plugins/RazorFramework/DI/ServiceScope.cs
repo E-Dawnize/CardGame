@@ -5,7 +5,10 @@ namespace RazorFramework.DI
 {
     public sealed class ServiceScope : IServiceResolver, IDisposable
     {
+        private readonly object _lifecycleGate = new object();
         private readonly ServiceContainer _container;
+        private readonly List<ServiceScope> _children =
+            new List<ServiceScope>();
         private bool _disposed;
 
         internal ServiceScope(
@@ -25,8 +28,11 @@ namespace RazorFramework.DI
 
         public object Resolve(Type serviceType)
         {
-            EnsureNotDisposed();
-            return _container.ResolveFromScope(this, serviceType);
+            lock (_lifecycleGate)
+            {
+                EnsureNotDisposed();
+                return _container.ResolveFromScope(this, serviceType);
+            }
         }
 
         public T Resolve<T>() where T : class
@@ -36,25 +42,60 @@ namespace RazorFramework.DI
 
         public bool TryResolve(Type serviceType, out object service)
         {
-            EnsureNotDisposed();
-            return _container.TryResolveFromScope(this, serviceType, out service);
+            lock (_lifecycleGate)
+            {
+                EnsureNotDisposed();
+                return _container.TryResolveFromScope(
+                    this,
+                    serviceType,
+                    out service);
+            }
         }
 
         public IReadOnlyList<T> ResolveAll<T>() where T : class
         {
-            EnsureNotDisposed();
-            return _container.ResolveAllFromScope<T>(this);
+            lock (_lifecycleGate)
+            {
+                EnsureNotDisposed();
+                return _container.ResolveAllFromScope<T>(this);
+            }
         }
 
         public ServiceScope CreateScope<TScope>()
         {
-            EnsureNotDisposed();
-            return _container.CreateChildScope(this, typeof(TScope));
+            lock (_lifecycleGate)
+            {
+                EnsureNotDisposed();
+                return _container.CreateChildScope(this, typeof(TScope));
+            }
         }
 
         public void Dispose()
         {
-            _disposed = true;
+            List<ServiceScope> children;
+            lock (_lifecycleGate)
+            {
+                if (_disposed)
+                {
+                    return;
+                }
+
+                _disposed = true;
+                children = new List<ServiceScope>(_children);
+                _children.Clear();
+            }
+
+            var errors = new List<Exception>();
+            for (var index = children.Count - 1; index >= 0; index--)
+            {
+                DisposalExceptionCollector.Capture(
+                    errors,
+                    children[index].Dispose);
+            }
+
+            DisposalExceptionCollector.Capture(errors, Owner.Dispose);
+            _container.NotifyScopeDisposed(this);
+            DisposalExceptionCollector.ThrowIfAny(errors);
         }
 
         internal ServiceScope FindAncestor(Type scopeType)
@@ -68,6 +109,23 @@ namespace RazorFramework.DI
             }
 
             return null;
+        }
+
+        internal void RegisterChild(ServiceScope child)
+        {
+            lock (_lifecycleGate)
+            {
+                EnsureNotDisposed();
+                _children.Add(child);
+            }
+        }
+
+        internal void RemoveChild(ServiceScope child)
+        {
+            lock (_lifecycleGate)
+            {
+                _children.Remove(child);
+            }
         }
 
         internal void EnsureNotDisposed()

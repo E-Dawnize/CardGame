@@ -6,9 +6,12 @@ namespace RazorFramework.DI
 {
     public sealed class ServiceContainer : IServiceResolver, IDisposable
     {
+        private readonly object _lifecycleGate = new object();
         private readonly ContainerBuildModel _model;
         private readonly DiagnosticDispatcher _diagnostics;
         private readonly LifetimeOwner _rootOwner = new LifetimeOwner();
+        private readonly List<ServiceScope> _rootScopes =
+            new List<ServiceScope>();
         private bool _disposed;
 
         internal ServiceContainer(
@@ -61,13 +64,31 @@ namespace RazorFramework.DI
 
         public void Dispose()
         {
-            if (_disposed)
+            List<ServiceScope> scopes;
+            lock (_lifecycleGate)
             {
-                return;
+                if (_disposed)
+                {
+                    return;
+                }
+
+                _disposed = true;
+                scopes = new List<ServiceScope>(_rootScopes);
+                _rootScopes.Clear();
             }
 
-            _disposed = true;
-            _diagnostics.Write(new DiDiagnosticEvent(DiDiagnosticKind.ContainerDisposed));
+            var errors = new List<Exception>();
+            for (var index = scopes.Count - 1; index >= 0; index--)
+            {
+                DisposalExceptionCollector.Capture(
+                    errors,
+                    scopes[index].Dispose);
+            }
+
+            DisposalExceptionCollector.Capture(errors, _rootOwner.Dispose);
+            _diagnostics.Write(new DiDiagnosticEvent(
+                DiDiagnosticKind.ContainerDisposed));
+            DisposalExceptionCollector.ThrowIfAny(errors);
         }
 
         private object ResolveRegistration(
@@ -98,7 +119,9 @@ namespace RazorFramework.DI
                         registration.Id,
                         () => CreateInstance(registration, null, path));
                 case ServiceLifetime.Transient:
-                    return CreateInstance(registration, scope, path);
+                    var transientOwner = scope?.Owner ?? _rootOwner;
+                    return transientOwner.CreateTransient(
+                        () => CreateInstance(registration, scope, path));
                 case ServiceLifetime.Scoped:
                     var anchor = scope?.FindAncestor(registration.ScopeType);
                     if (anchor == null)
@@ -125,28 +148,34 @@ namespace RazorFramework.DI
         {
             var plan = _model.Plans[registration.Id];
             path.Add(registration.ImplementationType);
-            var arguments = new object[plan.ParameterTypes.Count];
-            for (var index = 0; index < plan.ParameterTypes.Count; index++)
-            {
-                var dependencyType = plan.ParameterTypes[index];
-                var dependency = _model.DefaultRegistrations[dependencyType];
-                arguments[index] = ResolveRegistration(dependency, scope, path);
-            }
-
             try
             {
-                return plan.Constructor.Invoke(arguments);
-            }
-            catch (TargetInvocationException error)
-            {
-                var inner = error.InnerException ?? error;
-                throw new DependencyInjectionException(
-                    DependencyErrorCode.ActivationFailed,
-                    "A service constructor threw an exception.",
-                    registration.ServiceType,
-                    registration.ImplementationType,
-                    path,
-                    inner);
+                var arguments = new object[plan.ParameterTypes.Count];
+                for (var index = 0; index < plan.ParameterTypes.Count; index++)
+                {
+                    var dependencyType = plan.ParameterTypes[index];
+                    var dependency = _model.DefaultRegistrations[dependencyType];
+                    arguments[index] = ResolveRegistration(
+                        dependency,
+                        scope,
+                        path);
+                }
+
+                try
+                {
+                    return plan.Constructor.Invoke(arguments);
+                }
+                catch (TargetInvocationException error)
+                {
+                    var inner = error.InnerException ?? error;
+                    throw new DependencyInjectionException(
+                        DependencyErrorCode.ActivationFailed,
+                        "A service constructor threw an exception.",
+                        registration.ServiceType,
+                        registration.ImplementationType,
+                        path,
+                        inner);
+                }
             }
             finally
             {
@@ -158,34 +187,48 @@ namespace RazorFramework.DI
             ServiceScope parent,
             Type scopeType)
         {
-            EnsureNotDisposed();
-            if (scopeType == null)
+            lock (_lifecycleGate)
             {
-                throw new ArgumentNullException(nameof(scopeType));
-            }
+                EnsureNotDisposed();
+                if (scopeType == null)
+                {
+                    throw new ArgumentNullException(nameof(scopeType));
+                }
 
-            if (!_model.ScopeParents.TryGetValue(scopeType, out var expectedParent))
-            {
-                throw new DependencyInjectionException(
-                    DependencyErrorCode.InvalidScopeDefinition,
-                    "The requested scope marker is not defined.",
-                    scopeType);
-            }
+                if (!_model.ScopeParents.TryGetValue(
+                        scopeType,
+                        out var expectedParent))
+                {
+                    throw new DependencyInjectionException(
+                        DependencyErrorCode.InvalidScopeDefinition,
+                        "The requested scope marker is not defined.",
+                        scopeType);
+                }
 
-            var actualParent = parent?.ScopeType;
-            if (expectedParent != actualParent)
-            {
-                throw new DependencyInjectionException(
-                    DependencyErrorCode.ScopeMismatch,
-                    "The scope must be created from its declared direct parent.",
-                    scopeType);
-            }
+                var actualParent = parent?.ScopeType;
+                if (expectedParent != actualParent)
+                {
+                    throw new DependencyInjectionException(
+                        DependencyErrorCode.ScopeMismatch,
+                        "The scope must be created from its declared direct parent.",
+                        scopeType);
+                }
 
-            var scope = new ServiceScope(this, parent, scopeType);
-            _diagnostics.Write(new DiDiagnosticEvent(
-                DiDiagnosticKind.ScopeCreated,
-                scopeType: scopeType));
-            return scope;
+                var scope = new ServiceScope(this, parent, scopeType);
+                if (parent == null)
+                {
+                    _rootScopes.Add(scope);
+                }
+                else
+                {
+                    parent.RegisterChild(scope);
+                }
+
+                _diagnostics.Write(new DiDiagnosticEvent(
+                    DiDiagnosticKind.ScopeCreated,
+                    scopeType: scopeType));
+                return scope;
+            }
         }
 
         internal object ResolveFromScope(
@@ -224,6 +267,25 @@ namespace RazorFramework.DI
             return Array.Empty<T>();
         }
 
+        internal void NotifyScopeDisposed(ServiceScope scope)
+        {
+            if (scope.Parent == null)
+            {
+                lock (_lifecycleGate)
+                {
+                    _rootScopes.Remove(scope);
+                }
+            }
+            else
+            {
+                scope.Parent.RemoveChild(scope);
+            }
+
+            _diagnostics.Write(new DiDiagnosticEvent(
+                DiDiagnosticKind.ScopeDisposed,
+                scopeType: scope.ScopeType));
+        }
+
         private object ResolveForScope(
             ServiceScope scope,
             Type serviceType)
@@ -251,14 +313,16 @@ namespace RazorFramework.DI
                 new List<Type>());
         }
 
-
         private void EnsureNotDisposed()
         {
-            if (_disposed)
+            lock (_lifecycleGate)
             {
-                throw new DependencyInjectionException(
-                    DependencyErrorCode.ContainerDisposed,
-                    "The service container has been disposed.");
+                if (_disposed)
+                {
+                    throw new DependencyInjectionException(
+                        DependencyErrorCode.ContainerDisposed,
+                        "The service container has been disposed.");
+                }
             }
         }
     }
