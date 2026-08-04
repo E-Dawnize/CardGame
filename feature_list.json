@@ -18,13 +18,16 @@
     {
       "id": "feat-002",
       "name": "Pure C# DI Boundary",
-      "description": "Remove the direct UnityEngine.Object null guard from DIContainer without losing destroyed-Unity-object safety.",
+      "description": "Replace the legacy DIContainer with a strict immutable DI v2 core under Assets/Plugins/RazorFramework, plus a Unity-only object injection adapter.",
       "dependencies": ["feat-005"],
-      "status": "not-started",
+      "status": "in-progress",
       "doneCriteria": [
-        "DI contains no compile-time UnityEngine reference",
-        "Destroyed Unity object injection remains safe through an adapter or caller-side guard",
-        "Pure C# and consuming Unity tests cover the behavior"
+        "RazorFramework.DI is immutable after build and has no compile-time UnityEngine reference",
+        "Build-time validation covers registration, constructor, dependency cycle, and hierarchical scope lifetime errors",
+        "Container-created instances have deterministic ownership and reverse-order disposal",
+        "Destroyed Unity object injection remains safe through a main-thread Unity adapter",
+        "Pure C# and consuming Unity EditMode tests cover the specified behavior",
+        "Portable and full Harness verification pass with the legacy root DI implementation removed"
       ],
       "evidence": ""
     },
