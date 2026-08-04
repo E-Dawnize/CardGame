@@ -1,0 +1,7 @@
+{
+  "name": "RazorFramework.DI",
+  "rootNamespace": "RazorFramework.DI",
+  "references": [],
+  "autoReferenced": true,
+  "noEngineReferences": true
+}
