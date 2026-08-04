@@ -16,6 +16,7 @@ namespace RazorFramework.DI
             var scopeParents = BuildScopeTree(sourceScopeDefinitions);
             var plans = BuildActivationPlans(registrations, scopeParents);
             ValidateDependencyGraph(registrations, defaultRegistrations, plans);
+            ValidateLifetimes(registrations, defaultRegistrations, plans, scopeParents);
 
             return new ContainerBuildModel(
                 registrations,
@@ -262,6 +263,155 @@ namespace RazorFramework.DI
             path.RemoveAt(path.Count - 1);
             states[registration.Id] = VisitState.Visited;
         }
+
+        private static void ValidateLifetimes(
+            IReadOnlyList<ServiceRegistration> registrations,
+            IReadOnlyDictionary<Type, ServiceRegistration> defaults,
+            IReadOnlyDictionary<int, ActivationPlan> plans,
+            IReadOnlyDictionary<Type, Type> scopeParents)
+        {
+            var requirements = new Dictionary<int, Type>();
+            foreach (var registration in registrations)
+            {
+                DetermineRequiredScope(
+                    registration,
+                    defaults,
+                    plans,
+                    scopeParents,
+                    requirements);
+            }
+        }
+
+        private static Type DetermineRequiredScope(
+            ServiceRegistration registration,
+            IReadOnlyDictionary<Type, ServiceRegistration> defaults,
+            IReadOnlyDictionary<int, ActivationPlan> plans,
+            IReadOnlyDictionary<Type, Type> scopeParents,
+            IDictionary<int, Type> requirements)
+        {
+            if (registration.IsExternal)
+            {
+                return null;
+            }
+
+            if (requirements.TryGetValue(registration.Id, out var cached))
+            {
+                return cached;
+            }
+
+            Type dependencyRequirement = null;
+            var plan = plans[registration.Id];
+            foreach (var parameterType in plan.ParameterTypes)
+            {
+                var dependency = defaults[parameterType];
+                var requirement = DetermineRequiredScope(
+                    dependency,
+                    defaults,
+                    plans,
+                    scopeParents,
+                    requirements);
+                dependencyRequirement = MergeRequirements(
+                    dependencyRequirement,
+                    requirement,
+                    registration,
+                    scopeParents);
+            }
+
+            Type result;
+            switch (registration.Lifetime)
+            {
+                case ServiceLifetime.Singleton:
+                    if (dependencyRequirement != null)
+                    {
+                        throw Error(
+                            DependencyErrorCode.CaptiveDependency,
+                            "A singleton cannot capture a scoped dependency.",
+                            registration.ServiceType,
+                            registration.ImplementationType);
+                    }
+
+                    result = null;
+                    break;
+                case ServiceLifetime.Scoped:
+                    if (dependencyRequirement != null &&
+                        !IsAncestorOrSame(
+                            dependencyRequirement,
+                            registration.ScopeType,
+                            scopeParents))
+                    {
+                        throw Error(
+                            DependencyErrorCode.CaptiveDependency,
+                            "A scoped service cannot depend on a descendant scope.",
+                            registration.ServiceType,
+                            registration.ImplementationType);
+                    }
+
+                    result = registration.ScopeType;
+                    break;
+                case ServiceLifetime.Transient:
+                    result = dependencyRequirement;
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
+
+            plan.RequiredScopeType = result;
+            requirements[registration.Id] = result;
+            return result;
+        }
+
+        private static Type MergeRequirements(
+            Type left,
+            Type right,
+            ServiceRegistration registration,
+            IReadOnlyDictionary<Type, Type> scopeParents)
+        {
+            if (left == null)
+            {
+                return right;
+            }
+
+            if (right == null)
+            {
+                return left;
+            }
+
+            if (IsAncestorOrSame(left, right, scopeParents))
+            {
+                return right;
+            }
+
+            if (IsAncestorOrSame(right, left, scopeParents))
+            {
+                return left;
+            }
+
+            throw Error(
+                DependencyErrorCode.ScopeMismatch,
+                "A service requires incompatible sibling scopes.",
+                registration.ServiceType,
+                registration.ImplementationType);
+        }
+
+        private static bool IsAncestorOrSame(
+            Type ancestor,
+            Type descendant,
+            IReadOnlyDictionary<Type, Type> scopeParents)
+        {
+            var current = descendant;
+            while (current != null)
+            {
+                if (current == ancestor)
+                {
+                    return true;
+                }
+
+                scopeParents.TryGetValue(current, out current);
+            }
+
+            return false;
+        }
+
 
         private static DependencyInjectionException Error(
             DependencyErrorCode code,
