@@ -53,8 +53,7 @@ namespace RazorFramework.DI
 
         public IReadOnlyList<T> ResolveAll<T>() where T : class
         {
-            EnsureNotDisposed();
-            return Array.Empty<T>();
+            return ResolveAllForScope<T>(null);
         }
 
         public ServiceScope CreateScope<TScope>()
@@ -150,11 +149,21 @@ namespace RazorFramework.DI
             path.Add(registration.ImplementationType);
             try
             {
-                var arguments = new object[plan.ParameterTypes.Count];
-                for (var index = 0; index < plan.ParameterTypes.Count; index++)
+                var arguments = new object[plan.Dependencies.Count];
+                for (var index = 0; index < plan.Dependencies.Count; index++)
                 {
-                    var dependencyType = plan.ParameterTypes[index];
-                    var dependency = _model.DefaultRegistrations[dependencyType];
+                    var dependencyPlan = plan.Dependencies[index];
+                    if (dependencyPlan.IsCollection)
+                    {
+                        arguments[index] = ResolveCollection(
+                            dependencyPlan.ServiceType,
+                            scope,
+                            path);
+                        continue;
+                    }
+
+                    var dependency =
+                        _model.DefaultRegistrations[dependencyPlan.ServiceType];
                     arguments[index] = ResolveRegistration(
                         dependency,
                         scope,
@@ -163,7 +172,13 @@ namespace RazorFramework.DI
 
                 try
                 {
-                    return plan.Constructor.Invoke(arguments);
+                    var instance = plan.Constructor.Invoke(arguments);
+                    _diagnostics.Write(new DiDiagnosticEvent(
+                        DiDiagnosticKind.InstanceCreated,
+                        registration.ServiceType,
+                        registration.ImplementationType,
+                        scope?.ScopeType));
+                    return instance;
                 }
                 catch (TargetInvocationException error)
                 {
@@ -263,8 +278,51 @@ namespace RazorFramework.DI
             ServiceScope scope)
             where T : class
         {
-            EnsureNotDisposed();
-            return Array.Empty<T>();
+            return ResolveAllForScope<T>(scope);
+        }
+
+        private IReadOnlyList<T> ResolveAllForScope<T>(
+            ServiceScope scope)
+            where T : class
+        {
+            try
+            {
+                EnsureNotDisposed();
+                return (IReadOnlyList<T>)ResolveCollection(
+                    typeof(T),
+                    scope,
+                    new List<Type>());
+            }
+            catch (DependencyInjectionException error)
+            {
+                ReportResolutionFailure(typeof(T), scope, error);
+                throw;
+            }
+        }
+
+        private object ResolveCollection(
+            Type serviceType,
+            ServiceScope scope,
+            IList<Type> path)
+        {
+            if (!_model.CollectionRegistrations.TryGetValue(
+                    serviceType,
+                    out var registrations))
+            {
+                return Array.CreateInstance(serviceType, 0);
+            }
+
+            var result = Array.CreateInstance(
+                serviceType,
+                registrations.Count);
+            for (var index = 0; index < registrations.Count; index++)
+            {
+                result.SetValue(
+                    ResolveRegistration(registrations[index], scope, path),
+                    index);
+            }
+
+            return result;
         }
 
         internal void NotifyScopeDisposed(ServiceScope scope)
@@ -290,27 +348,47 @@ namespace RazorFramework.DI
             ServiceScope scope,
             Type serviceType)
         {
-            EnsureNotDisposed();
-            if (serviceType == null)
+            try
             {
-                throw new ArgumentNullException(nameof(serviceType));
-            }
+                EnsureNotDisposed();
+                if (serviceType == null)
+                {
+                    throw new ArgumentNullException(nameof(serviceType));
+                }
 
-            if (!_model.DefaultRegistrations.TryGetValue(
-                    serviceType,
-                    out var registration))
+                if (!_model.DefaultRegistrations.TryGetValue(
+                        serviceType,
+                        out var registration))
+                {
+                    throw new DependencyInjectionException(
+                        DependencyErrorCode.MissingDependency,
+                        "The requested service is not registered.",
+                        serviceType,
+                        dependencyPath: new[] { serviceType });
+                }
+
+                return ResolveRegistration(
+                    registration,
+                    scope,
+                    new List<Type>());
+            }
+            catch (DependencyInjectionException error)
             {
-                throw new DependencyInjectionException(
-                    DependencyErrorCode.MissingDependency,
-                    "The requested service is not registered.",
-                    serviceType,
-                    dependencyPath: new[] { serviceType });
+                ReportResolutionFailure(serviceType, scope, error);
+                throw;
             }
+        }
 
-            return ResolveRegistration(
-                registration,
-                scope,
-                new List<Type>());
+        private void ReportResolutionFailure(
+            Type serviceType,
+            ServiceScope scope,
+            DependencyInjectionException error)
+        {
+            _diagnostics.Write(new DiDiagnosticEvent(
+                DiDiagnosticKind.ResolutionFailed,
+                serviceType,
+                scopeType: scope?.ScopeType,
+                errorCode: error.Code));
         }
 
         private void EnsureNotDisposed()

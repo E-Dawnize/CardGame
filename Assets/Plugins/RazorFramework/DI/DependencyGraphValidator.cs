@@ -13,14 +13,26 @@ namespace RazorFramework.DI
         {
             var registrations = sourceRegistrations.ToArray();
             var defaultRegistrations = BuildDefaultRegistrations(registrations);
+            var collectionRegistrations =
+                BuildCollectionRegistrations(registrations);
             var scopeParents = BuildScopeTree(sourceScopeDefinitions);
             var plans = BuildActivationPlans(registrations, scopeParents);
-            ValidateDependencyGraph(registrations, defaultRegistrations, plans);
-            ValidateLifetimes(registrations, defaultRegistrations, plans, scopeParents);
+            ValidateDependencyGraph(
+                registrations,
+                defaultRegistrations,
+                collectionRegistrations,
+                plans);
+            ValidateLifetimes(
+                registrations,
+                defaultRegistrations,
+                collectionRegistrations,
+                plans,
+                scopeParents);
 
             return new ContainerBuildModel(
                 registrations,
                 defaultRegistrations,
+                collectionRegistrations,
                 plans,
                 scopeParents);
         }
@@ -46,6 +58,41 @@ namespace RazorFramework.DI
                 }
 
                 result.Add(registration.ServiceType, registration);
+            }
+
+            return result;
+        }
+
+        private static IReadOnlyDictionary<
+            Type,
+            IReadOnlyList<ServiceRegistration>> BuildCollectionRegistrations(
+                IReadOnlyList<ServiceRegistration> registrations)
+        {
+            var grouped =
+                new Dictionary<Type, List<ServiceRegistration>>();
+            foreach (var registration in registrations)
+            {
+                if (!registration.IsCollection)
+                {
+                    continue;
+                }
+
+                if (!grouped.TryGetValue(
+                        registration.ServiceType,
+                        out var entries))
+                {
+                    entries = new List<ServiceRegistration>();
+                    grouped.Add(registration.ServiceType, entries);
+                }
+
+                entries.Add(registration);
+            }
+
+            var result =
+                new Dictionary<Type, IReadOnlyList<ServiceRegistration>>();
+            foreach (var pair in grouped)
+            {
+                result.Add(pair.Key, pair.Value.ToArray());
             }
 
             return result;
@@ -143,16 +190,31 @@ namespace RazorFramework.DI
                 }
 
                 var constructor = SelectConstructor(registration);
-                var parameterTypes = constructor
+                var dependencies = constructor
                     .GetParameters()
-                    .Select(parameter => parameter.ParameterType)
+                    .Select(parameter => BuildDependencyPlan(parameter.ParameterType))
                     .ToArray();
                 plans.Add(
                     registration.Id,
-                    new ActivationPlan(registration, constructor, parameterTypes));
+                    new ActivationPlan(registration, constructor, dependencies));
             }
 
             return plans;
+        }
+
+        private static DependencyPlan BuildDependencyPlan(Type parameterType)
+        {
+            if (parameterType.IsGenericType &&
+                parameterType.GetGenericTypeDefinition() ==
+                typeof(IReadOnlyList<>))
+            {
+                return new DependencyPlan(
+                    parameterType,
+                    parameterType.GetGenericArguments()[0],
+                    true);
+            }
+
+            return new DependencyPlan(parameterType, parameterType, false);
         }
 
         private static ConstructorInfo SelectConstructor(
@@ -194,6 +256,8 @@ namespace RazorFramework.DI
         private static void ValidateDependencyGraph(
             IReadOnlyList<ServiceRegistration> registrations,
             IReadOnlyDictionary<Type, ServiceRegistration> defaults,
+            IReadOnlyDictionary<Type, IReadOnlyList<ServiceRegistration>>
+                collections,
             IReadOnlyDictionary<int, ActivationPlan> plans)
         {
             foreach (var registration in registrations)
@@ -205,13 +269,15 @@ namespace RazorFramework.DI
 
                 var states = new Dictionary<int, VisitState>();
                 var path = new List<Type>();
-                Visit(registration, defaults, plans, states, path);
+                Visit(registration, defaults, collections, plans, states, path);
             }
         }
 
         private static void Visit(
             ServiceRegistration registration,
             IReadOnlyDictionary<Type, ServiceRegistration> defaults,
+            IReadOnlyDictionary<Type, IReadOnlyList<ServiceRegistration>>
+                collections,
             IReadOnlyDictionary<int, ActivationPlan> plans,
             IDictionary<int, VisitState> states,
             IList<Type> path)
@@ -240,23 +306,53 @@ namespace RazorFramework.DI
 
             if (!registration.IsExternal)
             {
-                foreach (var parameterType in plans[registration.Id].ParameterTypes)
+                foreach (var dependencyPlan in
+                         plans[registration.Id].Dependencies)
                 {
-                    if (!defaults.TryGetValue(parameterType, out var dependency))
+                    if (dependencyPlan.IsCollection)
+                    {
+                        if (collections.TryGetValue(
+                                dependencyPlan.ServiceType,
+                                out var entries))
+                        {
+                            foreach (var entry in entries)
+                            {
+                                Visit(
+                                    entry,
+                                    defaults,
+                                    collections,
+                                    plans,
+                                    states,
+                                    path);
+                            }
+                        }
+
+                        continue;
+                    }
+
+                    if (!defaults.TryGetValue(
+                            dependencyPlan.ServiceType,
+                            out var dependency))
                     {
                         var missingPath = new List<Type>(path)
                         {
-                            parameterType
+                            dependencyPlan.ServiceType
                         };
                         throw Error(
                             DependencyErrorCode.MissingDependency,
                             "A constructor dependency is not registered.",
-                            parameterType,
+                            dependencyPlan.ServiceType,
                             registration.ImplementationType,
                             missingPath);
                     }
 
-                    Visit(dependency, defaults, plans, states, path);
+                    Visit(
+                        dependency,
+                        defaults,
+                        collections,
+                        plans,
+                        states,
+                        path);
                 }
             }
 
@@ -267,6 +363,8 @@ namespace RazorFramework.DI
         private static void ValidateLifetimes(
             IReadOnlyList<ServiceRegistration> registrations,
             IReadOnlyDictionary<Type, ServiceRegistration> defaults,
+            IReadOnlyDictionary<Type, IReadOnlyList<ServiceRegistration>>
+                collections,
             IReadOnlyDictionary<int, ActivationPlan> plans,
             IReadOnlyDictionary<Type, Type> scopeParents)
         {
@@ -276,6 +374,7 @@ namespace RazorFramework.DI
                 DetermineRequiredScope(
                     registration,
                     defaults,
+                    collections,
                     plans,
                     scopeParents,
                     requirements);
@@ -285,6 +384,8 @@ namespace RazorFramework.DI
         private static Type DetermineRequiredScope(
             ServiceRegistration registration,
             IReadOnlyDictionary<Type, ServiceRegistration> defaults,
+            IReadOnlyDictionary<Type, IReadOnlyList<ServiceRegistration>>
+                collections,
             IReadOnlyDictionary<int, ActivationPlan> plans,
             IReadOnlyDictionary<Type, Type> scopeParents,
             IDictionary<int, Type> requirements)
@@ -301,20 +402,41 @@ namespace RazorFramework.DI
 
             Type dependencyRequirement = null;
             var plan = plans[registration.Id];
-            foreach (var parameterType in plan.ParameterTypes)
+            foreach (var dependencyPlan in plan.Dependencies)
             {
-                var dependency = defaults[parameterType];
-                var requirement = DetermineRequiredScope(
-                    dependency,
+                if (dependencyPlan.IsCollection)
+                {
+                    if (collections.TryGetValue(
+                            dependencyPlan.ServiceType,
+                            out var entries))
+                    {
+                        foreach (var entry in entries)
+                        {
+                            dependencyRequirement =
+                                MergeDependencyRequirement(
+                                    dependencyRequirement,
+                                    entry,
+                                    registration,
+                                    defaults,
+                                    collections,
+                                    plans,
+                                    scopeParents,
+                                    requirements);
+                        }
+                    }
+
+                    continue;
+                }
+
+                dependencyRequirement = MergeDependencyRequirement(
+                    dependencyRequirement,
+                    defaults[dependencyPlan.ServiceType],
+                    registration,
                     defaults,
+                    collections,
                     plans,
                     scopeParents,
                     requirements);
-                dependencyRequirement = MergeRequirements(
-                    dependencyRequirement,
-                    requirement,
-                    registration,
-                    scopeParents);
             }
 
             Type result;
@@ -358,6 +480,31 @@ namespace RazorFramework.DI
             plan.RequiredScopeType = result;
             requirements[registration.Id] = result;
             return result;
+        }
+
+        private static Type MergeDependencyRequirement(
+            Type currentRequirement,
+            ServiceRegistration dependency,
+            ServiceRegistration consumer,
+            IReadOnlyDictionary<Type, ServiceRegistration> defaults,
+            IReadOnlyDictionary<Type, IReadOnlyList<ServiceRegistration>>
+                collections,
+            IReadOnlyDictionary<int, ActivationPlan> plans,
+            IReadOnlyDictionary<Type, Type> scopeParents,
+            IDictionary<int, Type> requirements)
+        {
+            var requirement = DetermineRequiredScope(
+                dependency,
+                defaults,
+                collections,
+                plans,
+                scopeParents,
+                requirements);
+            return MergeRequirements(
+                currentRequirement,
+                requirement,
+                consumer,
+                scopeParents);
         }
 
         private static Type MergeRequirements(
@@ -411,7 +558,6 @@ namespace RazorFramework.DI
 
             return false;
         }
-
 
         private static DependencyInjectionException Error(
             DependencyErrorCode code,

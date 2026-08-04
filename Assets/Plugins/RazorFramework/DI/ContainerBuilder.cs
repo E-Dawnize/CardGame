@@ -78,6 +78,49 @@ namespace RazorFramework.DI
             return AddScoped<TImplementation, TImplementation, TScope>();
         }
 
+        public ContainerBuilder AddCollectionSingleton<
+            TService,
+            TImplementation>()
+            where TService : class
+            where TImplementation : class, TService
+        {
+            return AddType(
+                typeof(TService),
+                typeof(TImplementation),
+                ServiceLifetime.Singleton,
+                null,
+                true);
+        }
+
+        public ContainerBuilder AddCollectionTransient<
+            TService,
+            TImplementation>()
+            where TService : class
+            where TImplementation : class, TService
+        {
+            return AddType(
+                typeof(TService),
+                typeof(TImplementation),
+                ServiceLifetime.Transient,
+                null,
+                true);
+        }
+
+        public ContainerBuilder AddCollectionScoped<
+            TService,
+            TImplementation,
+            TScope>()
+            where TService : class
+            where TImplementation : class, TService
+        {
+            return AddType(
+                typeof(TService),
+                typeof(TImplementation),
+                ServiceLifetime.Scoped,
+                typeof(TScope),
+                true);
+        }
+
         public ContainerBuilder DefineScope<TScope>()
         {
             return DefineScope(typeof(TScope), null);
@@ -103,7 +146,8 @@ namespace RazorFramework.DI
             Type serviceType,
             Type implementationType,
             ServiceLifetime lifetime,
-            Type scopeType)
+            Type scopeType,
+            bool isCollection = false)
         {
             EnsureMutable();
             _registrations.Add(new ServiceRegistration(
@@ -113,7 +157,7 @@ namespace RazorFramework.DI
                 lifetime,
                 scopeType,
                 null,
-                false));
+                isCollection));
             return this;
         }
 

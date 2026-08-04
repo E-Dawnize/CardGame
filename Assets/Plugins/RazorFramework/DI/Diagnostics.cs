@@ -18,18 +18,21 @@ namespace RazorFramework.DI
             DiDiagnosticKind kind,
             Type serviceType = null,
             Type implementationType = null,
-            Type scopeType = null)
+            Type scopeType = null,
+            DependencyErrorCode? errorCode = null)
         {
             Kind = kind;
             ServiceType = serviceType;
             ImplementationType = implementationType;
             ScopeType = scopeType;
+            ErrorCode = errorCode;
         }
 
         public DiDiagnosticKind Kind { get; }
         public Type ServiceType { get; }
         public Type ImplementationType { get; }
         public Type ScopeType { get; }
+        public DependencyErrorCode? ErrorCode { get; }
     }
 
     public interface IDiDiagnosticSink
