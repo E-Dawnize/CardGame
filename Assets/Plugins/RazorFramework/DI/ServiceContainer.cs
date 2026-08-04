@@ -8,6 +8,7 @@ namespace RazorFramework.DI
     {
         private readonly ContainerBuildModel _model;
         private readonly DiagnosticDispatcher _diagnostics;
+        private readonly LifetimeOwner _rootOwner = new LifetimeOwner();
         private bool _disposed;
 
         internal ServiceContainer(
@@ -90,12 +91,29 @@ namespace RazorFramework.DI
                 return registration.ExternalInstance;
             }
 
-            if (registration.Lifetime != ServiceLifetime.Transient)
+            switch (registration.Lifetime)
             {
-                throw new NotSupportedException(
-                    "Cached lifetimes are implemented in the next TDD task.");
+                case ServiceLifetime.Singleton:
+                    return _rootOwner.GetOrCreate(
+                        registration.Id,
+                        () => CreateInstance(registration, path));
+                case ServiceLifetime.Transient:
+                    return CreateInstance(registration, path);
+                case ServiceLifetime.Scoped:
+                    throw new DependencyInjectionException(
+                        DependencyErrorCode.ScopeMismatch,
+                        "A scoped service requires a matching scope.",
+                        registration.ServiceType,
+                        registration.ImplementationType);
+                default:
+                    throw new ArgumentOutOfRangeException();
             }
+        }
 
+        private object CreateInstance(
+            ServiceRegistration registration,
+            IList<Type> path)
+        {
             var plan = _model.Plans[registration.Id];
             path.Add(registration.ImplementationType);
             var arguments = new object[plan.ParameterTypes.Count];
