@@ -3,7 +3,8 @@
 ## 当前状态
 
 - `feat-005 CardGame Unity Project Host` 已完成；当前没有 `in-progress` 功能。
-- 分支：`codex/unity-project-host`。
+- 分支：`main`；Unity 宿主阶段已 fast-forward 合并到提交 `6356358`。
+- `.worktrees/unity-project-host` 隔离工作树与 `codex/unity-project-host` 分支已清理。
 - Unity 项目根目录已可由 Harness 以 Unity `6000.3.10f1` 进行 EditMode 验证。
 
 ## 已完成内容
@@ -12,7 +13,7 @@
 - 已规范化项目身份为 `E-Dawnize / CardGame` 与 `com.edawnize.cardgame`，首个启用场景为 `Assets/CardGame/Scenes/Bootstrap.unity`。
 - 已建立 Node 宿主契约、Unity EditMode 冒烟测试和完整 Harness 入口；旧 RazorFramework 源码仍留在根目录，不进入本阶段 Unity 编译范围。
 
-## 最新验证证据（2026-08-02）
+## 最新验证证据（2026-08-04）
 
 | 检查 | 结果 |
 |---|---|
@@ -25,7 +26,7 @@
 
 ## 下一步
 
-为 RazorFramework Core、DI 与 Lifecycle 编写独立重构规格和实施计划，先消除 DI 对 UnityEngine 的编译时依赖。
+按 brainstorming 流程为 `feat-002 Pure C# DI Boundary` 编写独立重构规格，先消除 DI 对 `UnityEngine` 的编译时依赖；规格批准前不修改运行时代码。
 
 ## 范围提醒
 

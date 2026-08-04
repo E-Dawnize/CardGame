@@ -2,9 +2,16 @@
 
 ## 当前状态
 
-**最后更新：** 2026-08-02 +08:00
+**最后更新：** 2026-08-04 +08:00
 **当前功能：** 无；feat-005 CardGame Unity Project Host 已完成。
-**状态：** 等待下一项独立功能立项。
+**状态：** Unity 宿主阶段已合并到 `main`；正在为下一项独立功能做设计澄清。
+
+## 阶段性收尾（2026-08-04）
+
+- `codex/unity-project-host` 已以 fast-forward 方式合并到 `main`，合并头为 `6356358`。
+- 合并前与合并后均重新执行 Node 契约测试和真实 Unity 完整 Harness；Node 为 25/25 通过，完整 Harness 为 23 passed、1 个已知 DI warning、0 failure。
+- 已删除 `.worktrees/unity-project-host` 隔离工作树和已合并功能分支；当前工作分支为 `main`。
+- 下一阶段按依赖顺序从 `feat-002 Pure C# DI Boundary` 开始设计，不在规格批准前迁入或修改旧框架运行时代码。
 
 ## 本次完成
 
