@@ -33,14 +33,14 @@ using var encounter = run.CreateScope<EncounterScope>();
 var preview = encounter.Resolve<DamagePreviewService>();
 ```
 
-- `Singleton` 由根容器持有；`Scoped` 由声明的作用域持有；`Transient` 由创建它的容器或作用域持有并以逆序释放。
+- 容器创建的 `Singleton` 由根容器持有；`Scoped` 由声明的作用域持有；`Transient` 由创建它的容器或作用域持有，并以逆序释放。通过 `AddSingleton(instance)` 传入的外部实例始终归调用方所有，容器不会调用其 `Dispose()`。
 - `CreateScope<TScope>()` 只允许按已定义的父子关系创建；子作用域可以使用祖先作用域服务，反向访问会在构建时或解析时以结构化异常失败。
 - `Resolve<T>()` 用于必需依赖；`TryResolve(Type, out object)` 用于可选依赖；`ResolveAll<T>()` 返回该服务的集合注册，保持注册顺序。`IServiceResolver` 只应注入框架边界或适配器，业务构造函数优先声明具体依赖。
 - 可通过 `ContainerOptions.DiagnosticSink` 观察构建、作用域、实例创建、解析失败和释放事件；诊断回调的异常不会改变容器行为。
 
 ### Unity 对象成员注入
 
-`RazorFramework.Unity.DI.UnityObjectInjector` 是唯一允许接触 `UnityEngine.Object` 的 DI 层。它支持实例字段和有 setter 的非索引属性：`[Inject]` 表示必需依赖，`[InjectOptional]` 表示未注册时跳过。成员计划按基类到派生类、同一类型内元数据顺序执行；错误会以 `UnityInjectionException` 给出错误码、目标类型、成员名和服务类型。
+`RazorFramework.Unity.DI.UnityObjectInjector` 是唯一允许接触 `UnityEngine.Object` 的 DI 层。它支持实例字段和有 setter 的非索引属性：`[Inject]` 表示必需依赖，`[InjectOptional]` 表示未注册时跳过。成员计划按基类到派生类、同一类型内元数据顺序执行；成员定义、依赖缺失和赋值失败会以 `UnityInjectionException` 给出错误码、目标类型、成员名和服务类型。`WrongThread` 只保证稳定的错误码与说明消息，因为它在接触目标对象前抛出。
 
 ```csharp
 var injector = new UnityObjectInjector(encounter);
