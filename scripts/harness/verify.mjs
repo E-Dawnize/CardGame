@@ -62,6 +62,104 @@ async function walk(directory, suffix) {
   return files;
 }
 
+function maskedCharacter(character) {
+  return character === "\r" || character === "\n" ? character : " ";
+}
+
+function maskCSharpCommentsAndStrings(source) {
+  let masked = "";
+  let index = 0;
+
+  while (index < source.length) {
+    const current = source[index];
+    const next = source[index + 1];
+    if (current === "/" && next === "/") {
+      masked += "  ";
+      index += 2;
+      while (index < source.length && source[index] !== "\r" && source[index] !== "\n") {
+        masked += " ";
+        index += 1;
+      }
+      continue;
+    }
+    if (current === "/" && next === "*") {
+      masked += "  ";
+      index += 2;
+      while (index < source.length) {
+        if (source[index] === "*" && source[index + 1] === "/") {
+          masked += "  ";
+          index += 2;
+          break;
+        }
+        masked += maskedCharacter(source[index]);
+        index += 1;
+      }
+      continue;
+    }
+
+    const verbatimString = current === "@" && next === "\"";
+    if (current === "\"" || verbatimString) {
+      const openingLength = verbatimString ? 2 : 1;
+      for (let offset = 0; offset < openingLength; offset += 1) {
+        masked += " ";
+      }
+      index += openingLength;
+      while (index < source.length) {
+        if (verbatimString && source[index] === "\"" && source[index + 1] === "\"") {
+          masked += "  ";
+          index += 2;
+          continue;
+        }
+        if (source[index] === "\"") {
+          masked += " ";
+          index += 1;
+          break;
+        }
+        if (!verbatimString && source[index] === "\\" && index + 1 < source.length) {
+          masked += "  ";
+          index += 2;
+          continue;
+        }
+        masked += maskedCharacter(source[index]);
+        index += 1;
+      }
+      continue;
+    }
+
+    if (current === "'") {
+      masked += " ";
+      index += 1;
+      while (index < source.length) {
+        if (source[index] === "\\" && index + 1 < source.length) {
+          masked += "  ";
+          index += 2;
+          continue;
+        }
+        masked += maskedCharacter(source[index]);
+        if (source[index] === "'") {
+          index += 1;
+          break;
+        }
+        index += 1;
+      }
+      continue;
+    }
+
+    masked += current;
+    index += 1;
+  }
+
+  return masked;
+}
+
+function extractCSharpNamespaceDeclarations(source) {
+  const namespacePattern =
+    /\bnamespace\s+([A-Za-z_]\w*(?:\s*\.\s*[A-Za-z_]\w*)*)\s*(?=\{|;)/g;
+  return [
+    ...maskCSharpCommentsAndStrings(source).matchAll(namespacePattern)
+  ].map((match) => match[1].replace(/\s+/g, ""));
+}
+
 function checkFeatureState(state) {
   if (!state || !Array.isArray(state.features)) {
     fail("feature_list.json must contain a features array");
@@ -279,16 +377,10 @@ async function checkPureCSharpDiBoundary() {
   }
 
   for (const file of files) {
-    const relative = path.relative(ROOT, file).replaceAll("\\\\", "/");
+    const relative = path.relative(ROOT, file).replaceAll("\\", "/");
     const value = await readFile(file, "utf8");
-    const code = value
-      .replace(/\/\*[\s\S]*?\*\//g, "")
-      .replace(/^\s*\/\/.*$/gm, "");
-    const namespaceDeclarations = [
-      ...code.matchAll(
-        /\bnamespace\s+([A-Za-z_]\w*(?:\.[A-Za-z_]\w*)*)\s*(?:\{|;)/g
-      )
-    ].map((match) => match[1]);
+    const code = maskCSharpCommentsAndStrings(value);
+    const namespaceDeclarations = extractCSharpNamespaceDeclarations(value);
     if (namespaceDeclarations.length === 0) {
       fail(relative + " is outside namespace RazorFramework.DI");
     }
