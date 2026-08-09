@@ -148,18 +148,46 @@ test("portable Harness ignores Unity tokens in DI comments and ordinary strings"
   );
 });
 
-test("portable Harness rejects Unity tokens in every supported interpolation form", async () => {
+async function assertInterpolatedUnityFixtureRejected(fileName, initializer) {
   await withTemporaryDiSource(
-    "Task7InterpolatedUnityFixture.cs",
-    "namespace RazorFramework.DI;\ninternal sealed class Task7InterpolatedUnityFixture {\n  private string Regular => $\"{typeof(UnityEngine.Object)}\";\n  private string VerbatimDollarFirst => $@\"{typeof(UnityEngine.Object)}\";\n  private string VerbatimAtFirst => @$\"{typeof(UnityEngine.Object)}\";\n  private string Raw => $\"\"\"{typeof(UnityEngine.Object)}\"\"\";\n}\n",
+    fileName,
+    "namespace RazorFramework.DI;\ninternal sealed class Task7InterpolatedUnityFixture { private string Value => " + initializer + "; }\n",
     () => {
       const result = runHarness();
       assert.notEqual(result.status, 0);
       assert.match(
         result.stderr,
-        /Task7InterpolatedUnityFixture\.cs violates the RazorFramework\.DI BCL-only boundary/
+        new RegExp(fileName.replace(".", "\\.") + " violates the RazorFramework\\.DI BCL-only boundary")
       );
     }
+  );
+}
+
+test("portable Harness rejects Unity tokens in regular interpolation", async () => {
+  await assertInterpolatedUnityFixtureRejected(
+    "Task7RegularInterpolationFixture.cs",
+    "$\"{typeof(UnityEngine.Object)}\""
+  );
+});
+
+test("portable Harness rejects Unity tokens in dollar-first verbatim interpolation", async () => {
+  await assertInterpolatedUnityFixtureRejected(
+    "Task7DollarFirstVerbatimInterpolationFixture.cs",
+    "$@\"\\{typeof(UnityEngine.Object)}\""
+  );
+});
+
+test("portable Harness rejects Unity tokens in at-first verbatim interpolation", async () => {
+  await assertInterpolatedUnityFixtureRejected(
+    "Task7AtFirstVerbatimInterpolationFixture.cs",
+    "@$\"\\{typeof(UnityEngine.Object)}\""
+  );
+});
+
+test("portable Harness rejects Unity tokens in raw interpolation", async () => {
+  await assertInterpolatedUnityFixtureRejected(
+    "Task7RawInterpolationFixture.cs",
+    "$\"\"\"{typeof(UnityEngine.Object)}\"\"\""
   );
 });
 

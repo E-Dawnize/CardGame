@@ -165,13 +165,20 @@ function extractCSharpInterpolationExpressions(source) {
   for (let index = 0; index < source.length; index += 1) {
     let cursor = index;
     let dollars = 0;
-    if (source[cursor] === "@") cursor += 1;
+    let verbatim = false;
+    if (source[cursor] === "@") {
+      verbatim = true;
+      cursor += 1;
+    }
     while (source[cursor] === "$") {
       dollars += 1;
       cursor += 1;
     }
     if (dollars === 0) continue;
-    if (source[cursor] === "@") cursor += 1;
+    if (source[cursor] === "@") {
+      verbatim = true;
+      cursor += 1;
+    }
     if (source[cursor] !== "\"") continue;
 
     let quotes = 0;
@@ -198,7 +205,7 @@ function extractCSharpInterpolationExpressions(source) {
         if (!source.startsWith(closeBrace, cursor)) break;
         expressions.push(source.slice(expressionStart, cursor));
         cursor += closeBrace.length;
-      } else if (!raw && source[cursor] === "\\") {
+      } else if (!raw && !verbatim && source[cursor] === "\\") {
         cursor += 2;
       } else if (!raw && source[cursor] === "\"" && source[cursor + 1] === "\"") {
         cursor += 2;
