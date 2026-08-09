@@ -137,6 +137,32 @@ test("portable Harness ignores namespace-looking comments and strings in DI core
   );
 });
 
+test("portable Harness ignores Unity tokens in DI comments and ordinary strings", async () => {
+  await withTemporaryDiSource(
+    "Task7UnityTriviaFixture.cs",
+    "namespace RazorFramework.DI;\n// UnityEngine.Object\ninternal sealed class Task7UnityTriviaFixture { private const string Text = \"UnityEngine.Object\"; }\n",
+    () => {
+      const result = runHarness();
+      assert.equal(result.status, 0, result.stderr);
+    }
+  );
+});
+
+test("portable Harness rejects Unity tokens in every supported interpolation form", async () => {
+  await withTemporaryDiSource(
+    "Task7InterpolatedUnityFixture.cs",
+    "namespace RazorFramework.DI;\ninternal sealed class Task7InterpolatedUnityFixture {\n  private string Regular => $\"{typeof(UnityEngine.Object)}\";\n  private string VerbatimDollarFirst => $@\"{typeof(UnityEngine.Object)}\";\n  private string VerbatimAtFirst => @$\"{typeof(UnityEngine.Object)}\";\n  private string Raw => $\"\"\"{typeof(UnityEngine.Object)}\"\"\";\n}\n",
+    () => {
+      const result = runHarness();
+      assert.notEqual(result.status, 0);
+      assert.match(
+        result.stderr,
+        /Task7InterpolatedUnityFixture\.cs violates the RazorFramework\.DI BCL-only boundary/
+      );
+    }
+  );
+});
+
 test("portable Harness accepts a file-scoped RazorFramework.DI namespace", async () => {
   await withTemporaryDiSource(
     "Task7FileScopedNamespaceFixture.cs",

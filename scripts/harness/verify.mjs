@@ -160,6 +160,65 @@ function extractCSharpNamespaceDeclarations(source) {
   ].map((match) => match[1].replace(/\s+/g, ""));
 }
 
+function extractCSharpInterpolationExpressions(source) {
+  const expressions = [];
+  for (let index = 0; index < source.length; index += 1) {
+    let cursor = index;
+    let dollars = 0;
+    if (source[cursor] === "@") cursor += 1;
+    while (source[cursor] === "$") {
+      dollars += 1;
+      cursor += 1;
+    }
+    if (dollars === 0) continue;
+    if (source[cursor] === "@") cursor += 1;
+    if (source[cursor] !== "\"") continue;
+
+    let quotes = 0;
+    while (source[cursor + quotes] === "\"") quotes += 1;
+    const raw = quotes >= 3;
+    const brace = "{".repeat(dollars);
+    const closeBrace = "}".repeat(dollars);
+    const closeQuote = "\"".repeat(raw ? quotes : 1);
+    cursor += quotes;
+
+    while (cursor < source.length && !source.startsWith(closeQuote, cursor)) {
+      if (source.startsWith(brace, cursor)) {
+        const expressionStart = cursor + brace.length;
+        let depth = 0;
+        cursor = expressionStart;
+        while (cursor < source.length) {
+          if (source[cursor] === "{") depth += 1;
+          if (source[cursor] === "}") {
+            if (depth === 0 && source.startsWith(closeBrace, cursor)) break;
+            if (depth > 0) depth -= 1;
+          }
+          cursor += 1;
+        }
+        if (!source.startsWith(closeBrace, cursor)) break;
+        expressions.push(source.slice(expressionStart, cursor));
+        cursor += closeBrace.length;
+      } else if (!raw && source[cursor] === "\\") {
+        cursor += 2;
+      } else if (!raw && source[cursor] === "\"" && source[cursor + 1] === "\"") {
+        cursor += 2;
+      } else {
+        cursor += 1;
+      }
+    }
+    index = cursor + closeQuote.length - 1;
+  }
+  return expressions;
+}
+
+function containsQualifiedUnityReference(source) {
+  const qualifiedUnity = /\bUnityEngine\.[A-Za-z_]\w*/;
+  if (qualifiedUnity.test(maskCSharpCommentsAndStrings(source))) return true;
+  return extractCSharpInterpolationExpressions(source).some((expression) =>
+    qualifiedUnity.test(maskCSharpCommentsAndStrings(expression))
+  );
+}
+
 function checkFeatureState(state) {
   if (!state || !Array.isArray(state.features)) {
     fail("feature_list.json must contain a features array");
@@ -395,7 +454,7 @@ async function checkPureCSharpDiBoundary() {
 
     const importsUnity =
       /^\s*(?:global\s+)?using\s+(?:(?:static\s+)?|(?:[A-Za-z_]\w*\s*=\s*))?(?:global::)?UnityEngine(?:\.[A-Za-z_]\w*)*\s*;/m.test(code);
-    const qualifiedUnity = /\bUnityEngine\.[A-Za-z_]\w*/.test(code);
+    const qualifiedUnity = containsQualifiedUnityReference(value);
     if (importsUnity || qualifiedUnity) {
       fail(relative + " violates the RazorFramework.DI BCL-only boundary");
     }
