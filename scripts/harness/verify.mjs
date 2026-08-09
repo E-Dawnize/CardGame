@@ -284,9 +284,21 @@ async function checkPureCSharpDiBoundary() {
     const code = value
       .replace(/\/\*[\s\S]*?\*\//g, "")
       .replace(/^\s*\/\/.*$/gm, "");
-    const namespacePattern = /\bnamespace\s+RazorFramework\.DI(?=\.|\s*(?:\{|;))/;
-    if (!namespacePattern.test(code)) {
+    const namespaceDeclarations = [
+      ...code.matchAll(
+        /\bnamespace\s+([A-Za-z_]\w*(?:\.[A-Za-z_]\w*)*)\s*(?:\{|;)/g
+      )
+    ].map((match) => match[1]);
+    if (namespaceDeclarations.length === 0) {
       fail(relative + " is outside namespace RazorFramework.DI");
+    }
+    for (const namespaceName of namespaceDeclarations) {
+      if (
+        namespaceName !== "RazorFramework.DI" &&
+        !namespaceName.startsWith("RazorFramework.DI.")
+      ) {
+        fail(relative + " is outside namespace RazorFramework.DI");
+      }
     }
 
     const importsUnity =

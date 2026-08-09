@@ -107,6 +107,21 @@ test("portable Harness rejects a foreign namespace in DI core", async () => {
   );
 });
 
+test("portable Harness rejects a DI source file with a mixed foreign namespace", async () => {
+  await withTemporaryDiSource(
+    "Task7MixedNamespaceFixture.cs",
+    "namespace RazorFramework.DI.Internal { internal sealed class Task7AllowedNamespaceFixture {} }\nnamespace RazorFramework.Foreign { internal sealed class Task7ForeignNamespaceFixture {} }\n",
+    () => {
+      const result = runHarness();
+      assert.notEqual(result.status, 0);
+      assert.match(
+        result.stderr,
+        /Task7MixedNamespaceFixture\.cs is outside namespace RazorFramework\.DI/
+      );
+    }
+  );
+});
+
 test("portable Harness accepts a file-scoped RazorFramework.DI namespace", async () => {
   await withTemporaryDiSource(
     "Task7FileScopedNamespaceFixture.cs",
