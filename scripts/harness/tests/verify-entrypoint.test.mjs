@@ -29,6 +29,16 @@ test("portable Harness validates the Unity project host", () => {
   assert.match(result.stdout, /\[PASS\] CardGame Unity project host validated/);
 });
 
+test("portable Harness validates the migrated pure-C# DI boundary", () => {
+  const result = runHarness();
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(
+    result.stdout,
+    /\[PASS\] RazorFramework\.DI pure-C# boundary validated/
+  );
+  assert.doesNotMatch(result.stdout, /Known DI Unity null-guard debt/);
+});
+
 test("full Harness invokes the configured editor without requiring an override project", () => {
   const result = runHarness(["--full"], { UNITY_EDITOR: process.execPath });
   assert.equal(result.status, 1);

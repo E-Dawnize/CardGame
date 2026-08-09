@@ -217,7 +217,6 @@ async function checkUnityProjectHost() {
 
 async function checkCSharpBoundaries() {
   const modules = new Map([
-    ["DI", "RazorFramework.DI"],
     ["Lifecycle", "RazorFramework.Lifecycle"],
     ["Events", "RazorFramework.Events"],
     ["MVVM", "RazorFramework.MVVM"],
@@ -251,21 +250,6 @@ async function checkCSharpBoundaries() {
 
       const importsUnity = /^\s*using\s+UnityEngine(?:\.|;)/m.test(code);
       const qualifiedUnity = /\bUnityEngine\.[A-Za-z_]\w*/.test(code);
-      if (module === "DI" && (importsUnity || qualifiedUnity)) {
-        const knownNullGuard =
-          relative === "DI/DIContainer.cs" &&
-          !importsUnity &&
-          (code.match(/\bUnityEngine\.[A-Za-z_]\w*/g) || []).length === 1 &&
-          code.includes(
-            "if (target is UnityEngine.Object uo && uo == null) return;"
-          );
-        if (knownNullGuard) {
-          warn("Known DI Unity null-guard debt is tracked by feat-002");
-        } else {
-          fail(relative + " violates the DI BCL-only boundary");
-        }
-      }
-
       const pureMvvm =
         relative.startsWith("MVVM/Commands/") ||
         relative.startsWith("MVVM/ViewModel/");
@@ -277,6 +261,67 @@ async function checkCSharpBoundaries() {
 
   if (count > 0) {
     pass("C# module boundaries checked (" + count + " files)");
+  }
+}
+
+async function checkPureCSharpDiBoundary() {
+  const sourceDirectory = path.join(ROOT, "Assets", "Plugins", "RazorFramework", "DI");
+  let files;
+  try {
+    files = await walk(sourceDirectory, ".cs");
+  } catch {
+    fail("RazorFramework.DI source module is missing: Assets/Plugins/RazorFramework/DI/");
+    return;
+  }
+
+  if (files.length === 0) {
+    fail("RazorFramework.DI source module contains no C# files");
+  }
+
+  for (const file of files) {
+    const relative = path.relative(ROOT, file).replaceAll("\\\\", "/");
+    const value = await readFile(file, "utf8");
+    const code = value
+      .replace(/\/\*[\s\S]*?\*\//g, "")
+      .replace(/^\s*\/\/.*$/gm, "");
+    const namespacePattern = /\bnamespace\s+RazorFramework\.DI(?:\.|\s*\{)/;
+    if (!namespacePattern.test(code)) {
+      fail(relative + " is outside namespace RazorFramework.DI");
+    }
+
+    const importsUnity = /^\s*using\s+UnityEngine(?:\.|;)/m.test(code);
+    const qualifiedUnity = /\bUnityEngine\.[A-Za-z_]\w*/.test(code);
+    if (importsUnity || qualifiedUnity) {
+      fail(relative + " violates the RazorFramework.DI BCL-only boundary");
+    }
+  }
+
+  try {
+    const assembly = JSON.parse(
+      await text("Assets/Plugins/RazorFramework/DI/RazorFramework.DI.asmdef")
+    );
+    if (assembly.name !== "RazorFramework.DI") {
+      fail("RazorFramework.DI.asmdef must name RazorFramework.DI");
+    }
+    if (assembly.noEngineReferences !== true) {
+      fail("RazorFramework.DI.asmdef must set noEngineReferences to true");
+    }
+    if (!Array.isArray(assembly.references) || assembly.references.length !== 0) {
+      fail("RazorFramework.DI.asmdef must declare no assembly references");
+    }
+  } catch {
+    fail("RazorFramework.DI.asmdef is missing or invalid JSON");
+  }
+
+  try {
+    await text("DI/DIContainer.cs");
+    fail("Legacy root DI/DIContainer.cs must be removed");
+  } catch {
+    pass("Legacy root DI implementation is absent");
+  }
+
+  if (failures.length === 0) {
+    pass("RazorFramework.DI pure-C# boundary validated");
   }
 }
 
@@ -516,6 +561,7 @@ async function main() {
 
   await checkSuperpowers();
   await checkUnityProjectHost();
+  await checkPureCSharpDiBoundary();
   await checkCSharpBoundaries();
   checkGitDiff();
 
