@@ -284,12 +284,13 @@ async function checkPureCSharpDiBoundary() {
     const code = value
       .replace(/\/\*[\s\S]*?\*\//g, "")
       .replace(/^\s*\/\/.*$/gm, "");
-    const namespacePattern = /\bnamespace\s+RazorFramework\.DI(?:\.|\s*\{)/;
+    const namespacePattern = /\bnamespace\s+RazorFramework\.DI(?=\.|\s*(?:\{|;))/;
     if (!namespacePattern.test(code)) {
       fail(relative + " is outside namespace RazorFramework.DI");
     }
 
-    const importsUnity = /^\s*using\s+UnityEngine(?:\.|;)/m.test(code);
+    const importsUnity =
+      /^\s*(?:global\s+)?using\s+(?:(?:static\s+)?|(?:[A-Za-z_]\w*\s*=\s*))?(?:global::)?UnityEngine(?:\.[A-Za-z_]\w*)*\s*;/m.test(code);
     const qualifiedUnity = /\bUnityEngine\.[A-Za-z_]\w*/.test(code);
     if (importsUnity || qualifiedUnity) {
       fail(relative + " violates the RazorFramework.DI BCL-only boundary");

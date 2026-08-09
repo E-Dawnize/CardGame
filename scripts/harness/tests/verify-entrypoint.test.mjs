@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
+import { rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
@@ -23,6 +24,23 @@ function runHarness(args = [], environment = {}) {
   });
 }
 
+async function withTemporaryDiSource(fileName, source, action) {
+  const filePath = path.join(
+    root,
+    "Assets",
+    "Plugins",
+    "RazorFramework",
+    "DI",
+    fileName
+  );
+  await writeFile(filePath, source, "utf8");
+  try {
+    return await action();
+  } finally {
+    await rm(filePath, { force: true });
+  }
+}
+
 test("portable Harness validates the Unity project host", () => {
   const result = runHarness();
   assert.equal(result.status, 0, result.stderr);
@@ -37,6 +55,71 @@ test("portable Harness validates the migrated pure-C# DI boundary", () => {
     /\[PASS\] RazorFramework\.DI pure-C# boundary validated/
   );
   assert.doesNotMatch(result.stdout, /Known DI Unity null-guard debt/);
+});
+
+test("portable Harness rejects global and alias UnityEngine imports in DI core", async () => {
+  await withTemporaryDiSource(
+    "Task7GlobalUnityFixture.cs",
+    "global using UnityEngine;\nnamespace RazorFramework.DI { internal sealed class Task7GlobalUnityFixture {} }\n",
+    async () => {
+      await withTemporaryDiSource(
+        "Task7AliasUnityFixture.cs",
+        "using UE = UnityEngine;\nnamespace RazorFramework.DI { internal sealed class Task7AliasUnityFixture {} }\n",
+        () => {
+          return withTemporaryDiSource(
+            "Task7DirectUnityFixture.cs",
+            "using UnityEngine;\nnamespace RazorFramework.DI { internal sealed class Task7DirectUnityFixture {} }\n",
+            () => {
+              const result = runHarness();
+              assert.notEqual(result.status, 0);
+              assert.match(
+                result.stderr,
+                /Task7GlobalUnityFixture\.cs violates the RazorFramework\.DI BCL-only boundary/
+              );
+              assert.match(
+                result.stderr,
+                /Task7AliasUnityFixture\.cs violates the RazorFramework\.DI BCL-only boundary/
+              );
+              assert.match(
+                result.stderr,
+                /Task7DirectUnityFixture\.cs violates the RazorFramework\.DI BCL-only boundary/
+              );
+            }
+          );
+        }
+      );
+    }
+  );
+});
+
+test("portable Harness rejects a foreign namespace in DI core", async () => {
+  await withTemporaryDiSource(
+    "Task7ForeignNamespaceFixture.cs",
+    "namespace RazorFramework.Foreign;\ninternal sealed class Task7ForeignNamespaceFixture {}\n",
+    () => {
+      const result = runHarness();
+      assert.notEqual(result.status, 0);
+      assert.match(
+        result.stderr,
+        /Task7ForeignNamespaceFixture\.cs is outside namespace RazorFramework\.DI/
+      );
+    }
+  );
+});
+
+test("portable Harness accepts a file-scoped RazorFramework.DI namespace", async () => {
+  await withTemporaryDiSource(
+    "Task7FileScopedNamespaceFixture.cs",
+    "namespace RazorFramework.DI;\ninternal sealed class Task7FileScopedNamespaceFixture {}\n",
+    () => {
+      const result = runHarness();
+      assert.equal(result.status, 0, result.stderr);
+      assert.match(
+        result.stdout,
+        /\[PASS\] RazorFramework\.DI pure-C# boundary validated/
+      );
+    }
+  );
 });
 
 test("full Harness invokes the configured editor without requiring an override project", () => {
