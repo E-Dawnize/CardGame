@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using NUnit.Framework;
 
 namespace RazorFramework.DI.Tests
@@ -67,6 +68,9 @@ namespace RazorFramework.DI.Tests
 
             Assert.That(error.Code, Is.EqualTo(DependencyErrorCode.ScopeMismatch));
             Assert.That(error.ServiceType, Is.EqualTo(typeof(RunState)));
+            Assert.That(
+                error.DependencyPath,
+                Is.EqualTo(new[] { typeof(RunState) }));
         }
 
         [Test]
@@ -93,6 +97,14 @@ namespace RazorFramework.DI.Tests
 
             Assert.That(error.Code, Is.EqualTo(DependencyErrorCode.CaptiveDependency));
             Assert.That(error.ServiceType, Is.EqualTo(typeof(SingletonNeedsTransient)));
+            Assert.That(
+                error.DependencyPath,
+                Is.EqualTo(new[]
+                {
+                    typeof(SingletonNeedsTransient),
+                    typeof(TransientNeedsRun),
+                    typeof(RunState)
+                }));
         }
 
         [Test]
@@ -119,6 +131,37 @@ namespace RazorFramework.DI.Tests
             var error = Assert.Throws<DependencyInjectionException>(() => builder.Build());
 
             Assert.That(error.Code, Is.EqualTo(DependencyErrorCode.ScopeMismatch));
+            Assert.That(
+                error.DependencyPath,
+                Is.EqualTo(new[]
+                {
+                    typeof(NeedsBattleAndShop),
+                    typeof(BattleState),
+                    typeof(ShopState)
+                }));
+        }
+
+        [Test]
+        public void Build_ReportsCollectionEntriesThatRequireSiblingScopes()
+        {
+            var builder = new ContainerBuilder();
+            builder.DefineScope<BattleTag>();
+            builder.DefineScope<ShopTag>();
+            builder.AddCollectionScoped<IScopedPlugin, BattlePlugin, BattleTag>();
+            builder.AddCollectionScoped<IScopedPlugin, ShopPlugin, ShopTag>();
+            builder.AddTransient<NeedsScopedPlugins>();
+
+            var error = Assert.Throws<DependencyInjectionException>(() => builder.Build());
+
+            Assert.That(error.Code, Is.EqualTo(DependencyErrorCode.ScopeMismatch));
+            Assert.That(
+                error.DependencyPath,
+                Is.EqualTo(new[]
+                {
+                    typeof(NeedsScopedPlugins),
+                    typeof(BattlePlugin),
+                    typeof(ShopPlugin)
+                }));
         }
 
         [Test]
@@ -131,10 +174,17 @@ namespace RazorFramework.DI.Tests
             using var encounter = run.CreateScope<EncounterTag>();
 
             Assert.That(encounter.Resolve<TransientNeedsRun>().RunState, Is.Not.Null);
+            var error = Assert.Throws<DependencyInjectionException>(
+                () => container.Resolve<TransientNeedsRun>());
+
+            Assert.That(error.Code, Is.EqualTo(DependencyErrorCode.ScopeMismatch));
             Assert.That(
-                Assert.Throws<DependencyInjectionException>(
-                    () => container.Resolve<TransientNeedsRun>()).Code,
-                Is.EqualTo(DependencyErrorCode.ScopeMismatch));
+                error.DependencyPath,
+                Is.EqualTo(new[]
+                {
+                    typeof(TransientNeedsRun),
+                    typeof(RunState)
+                }));
         }
 
         [Test]
@@ -240,6 +290,25 @@ namespace RazorFramework.DI.Tests
         private sealed class NeedsBattleAndShop
         {
             public NeedsBattleAndShop(BattleState battle, ShopState shop)
+            {
+            }
+        }
+
+        private interface IScopedPlugin
+        {
+        }
+
+        private sealed class BattlePlugin : IScopedPlugin
+        {
+        }
+
+        private sealed class ShopPlugin : IScopedPlugin
+        {
+        }
+
+        private sealed class NeedsScopedPlugins
+        {
+            public NeedsScopedPlugins(IReadOnlyList<IScopedPlugin> plugins)
             {
             }
         }

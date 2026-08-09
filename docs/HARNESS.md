@@ -30,22 +30,24 @@ node scripts/harness/verify.mjs
 node --test scripts/harness/tests/*.test.mjs
 ```
 
-新规则必须先以失败测试表达。测试覆盖 Unity 宿主结构、命令行入口以及完整验证对结果 XML 的判定。
+新规则必须先以失败测试表达。测试覆盖 Unity 宿主结构、命令行入口、DI 词法边界、唯一实现、持久化文档质量、asmdef 固定字段，以及完整验证对结果 XML 的判定。
 
 ## 便携验证
 
 `node scripts/harness/verify.mjs` 检查：
 
 - 必需 Harness 工件、功能状态和固定版本的 Superpowers 技能库；
-- DI V2 是唯一运行时 DI 实现：旧根目录 `DI/DIContainer.cs` 必须不存在；
-- `Assets/Plugins/RazorFramework/DI/` 的每个 C# 文件必须属于 `RazorFramework.DI`，且不得出现实际代码中的 `UnityEngine` 引用；`RazorFramework.DI.asmdef` 必须启用 `noEngineReferences: true` 且不引用其他程序集；
+- DI V2 是唯一运行时 DI 实现：根目录 `DI/` 下递归不得存在任何 `.cs`，即使旧实现改名或移入子目录也会失败；目录不存在或没有 C# 文件时允许通过；
+- `Assets/Plugins/RazorFramework/DI/` 的每个 C# 文件必须属于 `RazorFramework.DI`，且不得出现实际代码中的 `UnityEngine` 引用；扫描覆盖点号和 `global ::` 周围的合法空白、注释，以及插值表达式；普通注释和字符串不误报；
+- `RazorFramework.DI.asmdef` 必须固定 `name`、`rootNamespace`、空 `references`、`autoReferenced: true` 和 `noEngineReferences: true`；若 feat-003 改变显式引用策略，必须先更新规格和测试；
+- DI V2 中文规格与实施计划不得出现连续大量 `?`、重复 replacement character 或异常低的中文内容；正常中文问号不会触发该门禁；
 - 其余尚未迁入的根目录 RazorFramework 模块的命名空间边界；
 - CardGame Unity 宿主：Unity `6000.3.10f1`、`E-Dawnize / CardGame` 身份、`com.edawnize.cardgame`、四个关键包，以及第一个启用的 Bootstrap 场景；
 - `git diff --check`。
 
 便携模式不启动 Unity，因此不能代替实际 C# 编译或场景加载。若宿主检查失败，先检查 `ProjectSettings/`、`Packages/manifest.json` 和 `Assets/CardGame/Scenes/Bootstrap.unity` 是否被移动、删改或使用了错误版本。
 
-便携模式唯一的预期警告是“没有运行 Unity”。它不能证明 C# 编译、反射注入或场景加载；这些由完整模式提供 Editor EditMode 证据。Harness 的文本扫描会忽略注释和普通字符串，但会检查插值字符串中的实际表达式，避免借由文本伪装绕过 DI 纯 C# 门禁。
+便携模式唯一的预期警告是“没有运行 Unity”。它不能证明 C# 编译、反射注入或场景加载；这些由完整模式提供 Editor EditMode 证据。Harness 的扫描是面向当前契约的小型词法门禁，不宣称是完整 C# parser。新增语法形态时必须先提供独立 fixture，证明违规代码会失败、非代码文本不会误报。
 
 ## 完整 Unity 验证
 
@@ -81,9 +83,11 @@ Harness 不依据 Unity 自动生成的 `.sln` 或 `.csproj` 触发 `dotnet test
 ## 维护规则
 
 - 修改 Unity 宿主契约时，先补充 `scripts/harness/tests/` 中的 Node 行为测试，再修改检查器。
+- 修改 DI 边界或中文持久化工件门禁时，每个关键合法语法使用独立 fixture；不要用只搜索检查器源码文本的测试代替运行行为测试。
 - 包版本、项目身份、Bootstrap 路径或完整验证结果规则变更，都必须同步更新测试、文档和状态证据。
 - 只提交源资产、`.meta`、`Packages/`、`ProjectSettings/` 和维护脚本；禁止提交 `Library/`、`Temp/`、`Logs/`、`UserSettings/`、`.vs/`、`.sln`、`.slnx` 或 `.csproj`。
 - 不要为了让 Harness 通过而降低边界规则；应修复根因，或把经审阅的例外记录到功能状态。
+- 分支收尾必须运行 `git diff --check <功能基线>..HEAD`；只运行无范围的 `git diff --check` 不能证明已提交的整段功能差异没有 whitespace 问题。
 
 ## 技能与状态维护
 

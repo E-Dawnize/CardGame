@@ -100,7 +100,8 @@ namespace RazorFramework.DI
                 return registration.ExternalInstance;
             }
 
-            var requiredScope = _model.Plans[registration.Id].RequiredScopeType;
+            var plan = _model.Plans[registration.Id];
+            var requiredScope = plan.RequiredScopeType;
             if (requiredScope != null &&
                 (scope == null || scope.FindAncestor(requiredScope) == null))
             {
@@ -108,7 +109,8 @@ namespace RazorFramework.DI
                     DependencyErrorCode.ScopeMismatch,
                     "The service requires a scope that is not active.",
                     registration.ServiceType,
-                    registration.ImplementationType);
+                    registration.ImplementationType,
+                    BuildDependencyPath(path, plan.RequiredScopePath));
             }
 
             switch (registration.Lifetime)
@@ -129,7 +131,8 @@ namespace RazorFramework.DI
                             DependencyErrorCode.ScopeMismatch,
                             "A scoped service requires a matching scope.",
                             registration.ServiceType,
-                            registration.ImplementationType);
+                            registration.ImplementationType,
+                            BuildDependencyPath(path, plan.RequiredScopePath));
                     }
 
                     return anchor.Owner.GetOrCreate(
@@ -389,6 +392,19 @@ namespace RazorFramework.DI
                 serviceType,
                 scopeType: scope?.ScopeType,
                 errorCode: error.Code));
+        }
+
+        private static IReadOnlyList<Type> BuildDependencyPath(
+            IEnumerable<Type> currentPath,
+            IEnumerable<Type> requiredPath)
+        {
+            var result = new List<Type>(currentPath);
+            if (requiredPath != null)
+            {
+                result.AddRange(requiredPath);
+            }
+
+            return result;
         }
 
         private void EnsureNotDisposed()

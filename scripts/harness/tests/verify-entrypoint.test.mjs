@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { rm, writeFile } from "node:fs/promises";
+import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
@@ -38,6 +38,27 @@ async function withTemporaryDiSource(fileName, source, action) {
     return await action();
   } finally {
     await rm(filePath, { force: true });
+  }
+}
+
+async function withTemporaryFile(relativePath, contents, action) {
+  const filePath = path.join(root, ...relativePath.split("/"));
+  let original;
+  try {
+    original = await readFile(filePath);
+  } catch (error) {
+    if (error.code !== "ENOENT") throw error;
+  }
+  await mkdir(path.dirname(filePath), { recursive: true });
+  await writeFile(filePath, contents, "utf8");
+  try {
+    return await action();
+  } finally {
+    if (original === undefined) {
+      await rm(filePath, { force: true });
+    } else {
+      await writeFile(filePath, original);
+    }
   }
 }
 
@@ -148,6 +169,42 @@ test("portable Harness ignores Unity tokens in DI comments and ordinary strings"
   );
 });
 
+test("portable Harness rejects Unity qualification separated by whitespace", async () => {
+  await withTemporaryDiSource(
+    "Task7WhitespaceUnityFixture.cs",
+    "namespace RazorFramework.DI;\ninternal sealed class Task7WhitespaceUnityFixture { private UnityEngine . Object Value; }\n",
+    () => {
+      const result = runHarness();
+      assert.notEqual(result.status, 0);
+      assert.match(result.stderr, /Task7WhitespaceUnityFixture\.cs violates the RazorFramework\.DI BCL-only boundary/);
+    }
+  );
+});
+
+test("portable Harness rejects global Unity qualification with spaced separators", async () => {
+  await withTemporaryDiSource(
+    "Task7GlobalSpacedUnityFixture.cs",
+    "namespace RazorFramework.DI;\ninternal sealed class Task7GlobalSpacedUnityFixture { private global :: UnityEngine . Object Value; }\n",
+    () => {
+      const result = runHarness();
+      assert.notEqual(result.status, 0);
+      assert.match(result.stderr, /Task7GlobalSpacedUnityFixture\.cs violates the RazorFramework\.DI BCL-only boundary/);
+    }
+  );
+});
+
+test("portable Harness rejects Unity qualification separated by comments", async () => {
+  await withTemporaryDiSource(
+    "Task7CommentSeparatedUnityFixture.cs",
+    "namespace RazorFramework.DI;\ninternal sealed class Task7CommentSeparatedUnityFixture { private UnityEngine /* trivia */ . /* trivia */ Object Value; }\n",
+    () => {
+      const result = runHarness();
+      assert.notEqual(result.status, 0);
+      assert.match(result.stderr, /Task7CommentSeparatedUnityFixture\.cs violates the RazorFramework\.DI BCL-only boundary/);
+    }
+  );
+});
+
 async function assertInterpolatedUnityFixtureRejected(fileName, initializer) {
   await withTemporaryDiSource(
     fileName,
@@ -202,6 +259,87 @@ test("portable Harness accepts a file-scoped RazorFramework.DI namespace", async
         result.stdout,
         /\[PASS\] RazorFramework\.DI pure-C# boundary validated/
       );
+    }
+  );
+});
+
+test("portable Harness rejects any renamed legacy DI source", async () => {
+  await withTemporaryFile(
+    "DI/LegacyContainer.cs",
+    "namespace RazorFramework.DI { internal sealed class LegacyContainer {} }\n",
+    () => {
+      const result = runHarness();
+      assert.notEqual(result.status, 0);
+      assert.match(result.stderr, /Legacy root DI source must be absent: DI\/LegacyContainer\.cs/);
+    }
+  );
+});
+
+test("portable Harness rejects nested legacy DI source", async () => {
+  await withTemporaryFile(
+    "DI/Nested/AlternativeContainer.cs",
+    "namespace RazorFramework.DI { internal sealed class AlternativeContainer {} }\n",
+    () => {
+      const result = runHarness();
+      assert.notEqual(result.status, 0);
+      assert.match(result.stderr, /Legacy root DI source must be absent: DI\/Nested\/AlternativeContainer\.cs/);
+    }
+  );
+});
+
+test("portable Harness rejects corrupted durable DI documents", async () => {
+  await withTemporaryFile(
+    "docs/superpowers/specs/2026-08-04-di-v2-design.md",
+    "# CardGame DI V2\n\n????????????????????????????????????????\n",
+    () => {
+      const result = runHarness();
+      assert.notEqual(result.status, 0);
+      assert.match(result.stderr, /contains a suspicious run of replacement question marks/);
+    }
+  );
+});
+
+test("portable Harness accepts normal Chinese questions in durable DI documents", async () => {
+  await withTemporaryFile(
+    "docs/superpowers/specs/2026-08-04-di-v2-design.md",
+    "# CardGame DI V2 设计\n\n为什么需要纯 C# 边界？因为核心容器必须能脱离 Unity 验证。\n",
+    () => {
+      const result = runHarness();
+      assert.equal(result.status, 0, result.stderr);
+    }
+  );
+});
+
+test("portable Harness enforces DI asmdef root namespace", async () => {
+  const assembly = JSON.parse(await readFile(
+    path.join(root, "Assets/Plugins/RazorFramework/DI/RazorFramework.DI.asmdef"),
+    "utf8"
+  ));
+  assembly.rootNamespace = "Wrong.Namespace";
+  await withTemporaryFile(
+    "Assets/Plugins/RazorFramework/DI/RazorFramework.DI.asmdef",
+    JSON.stringify(assembly, null, 2) + "\n",
+    () => {
+      const result = runHarness();
+      assert.notEqual(result.status, 0);
+      assert.match(result.stderr, /RazorFramework\.DI\.asmdef must set rootNamespace to RazorFramework\.DI/);
+    }
+  );
+});
+
+test("portable Harness enforces DI asmdef autoReferenced", async () => {
+  const assembly = JSON.parse(await readFile(
+    path.join(root, "Assets/Plugins/RazorFramework/DI/RazorFramework.DI.asmdef"),
+    "utf8"
+  ));
+  assembly.autoReferenced = false;
+  await withTemporaryFile(
+    "Assets/Plugins/RazorFramework/DI/RazorFramework.DI.asmdef",
+    JSON.stringify(assembly, null, 2) + "\n",
+    () => {
+      const result = runHarness();
+      assert.notEqual(result.status, 0);
+      assert.match(result.stderr, /RazorFramework\.DI\.asmdef must set autoReferenced to true/);
     }
   );
 });

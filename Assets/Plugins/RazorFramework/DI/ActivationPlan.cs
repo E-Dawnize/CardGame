@@ -37,6 +37,7 @@ namespace RazorFramework.DI
         public ConstructorInfo Constructor { get; }
         public IReadOnlyList<DependencyPlan> Dependencies { get; }
         public Type RequiredScopeType { get; set; }
+        public IReadOnlyList<Type> RequiredScopePath { get; set; }
     }
 
     internal sealed class ContainerBuildModel

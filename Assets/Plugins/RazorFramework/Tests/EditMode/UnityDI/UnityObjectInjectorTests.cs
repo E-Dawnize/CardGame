@@ -11,6 +11,12 @@ namespace RazorFramework.Unity.DI.Tests
 {
     public sealed class UnityObjectInjectorTests
     {
+        [SetUp]
+        public void SetUp()
+        {
+            UnityMainThread.InitializeForTests();
+        }
+
         [Test]
         public void Inject_AssignsRequiredBaseFieldAndOptionalProperty()
         {
@@ -58,6 +64,31 @@ namespace RazorFramework.Unity.DI.Tests
             {
                 try
                 {
+                    injector.Inject(null);
+                    return null;
+                }
+                catch (UnityInjectionException error)
+                {
+                    return error;
+                }
+            }).GetAwaiter().GetResult();
+
+            Assert.That(captured, Is.Not.Null);
+            Assert.That(
+                captured.Code,
+                Is.EqualTo(UnityInjectionErrorCode.WrongThread));
+        }
+
+        [Test]
+        public void ConstructingOnWorkerThread_IsRejectedEvenWhenUsedOnThatThread()
+        {
+            using var container = new ContainerBuilder().Build();
+
+            var captured = Task.Run(() =>
+            {
+                try
+                {
+                    var injector = new UnityObjectInjector(container);
                     injector.Inject(null);
                     return null;
                 }

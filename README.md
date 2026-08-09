@@ -16,7 +16,7 @@ CardGame 是一个基于 Unity 的叙事肉鸽卡牌项目。它以分支地图�
 
 ## DI V2 使用方式
 
-`RazorFramework.DI` 是 CardGame 当前唯一的 DI 实现；已移除旧根目录 `DI/DIContainer.cs`。容器通过 `ContainerBuilder` 注册服务并在 `Build()` 后冻结。构建阶段会验证重复注册、构造函数可选性、缺失依赖、依赖环、作用域定义和生命周期穿透，因此不应在运行中修改注册表。
+`RazorFramework.DI` 是 CardGame 当前唯一的 DI 实现；根目录 `DI/` 不允许存在任何 C# 实现。容器通过 `ContainerBuilder` 注册服务并在 `Build()` 后冻结。构建阶段会验证重复注册、构造函数可选性、缺失依赖、依赖环、作用域定义和生命周期穿透，因此不应在运行中修改注册表。结构化异常的 `DependencyPath` 会保留间接 captive、兄弟作用域、集合冲突和运行时缺少作用域的类型链。
 
 ```csharp
 var builder = new ContainerBuilder();
@@ -40,14 +40,14 @@ var preview = encounter.Resolve<DamagePreviewService>();
 
 ### Unity 对象成员注入
 
-`RazorFramework.Unity.DI.UnityObjectInjector` 是唯一允许接触 `UnityEngine.Object` 的 DI 层。它支持实例字段和有 setter 的非索引属性：`[Inject]` 表示必需依赖，`[InjectOptional]` 表示未注册时跳过。成员计划按基类到派生类、同一类型内元数据顺序执行；成员定义、依赖缺失和赋值失败会以 `UnityInjectionException` 给出错误码、目标类型、成员名和服务类型。`WrongThread` 只保证稳定的错误码与说明消息，因为它在接触目标对象前抛出。
+`RazorFramework.Unity.DI.UnityObjectInjector` 是唯一允许接触 `UnityEngine.Object` 的 DI 层。它支持实例字段和有 setter 的非索引属性：`[Inject]` 表示必需依赖，`[InjectOptional]` 表示未注册时跳过。成员计划按基类到派生类、同一类型内元数据顺序执行；成员定义、依赖缺失和赋值失败会以 `UnityInjectionException` 给出错误码、目标类型、成员名和服务类型。`WrongThread` 在接触目标对象前抛出，并表示 Unity 主线程尚未可信初始化，或当前线程不是 Unity 初始化阶段捕获的主线程。
 
 ```csharp
 var injector = new UnityObjectInjector(encounter);
 injector.Inject(component);
 ```
 
-注入器必须在它**创建时所在的线程**调用；它首先检查该 owner thread，随后才检查 Unity 对象是否为 `null`（包括已销毁对象）。不要从工作线程创建或调用注入器，也不要把它当作跨线程调度器。
+适配器会在 Unity `SubsystemRegistration` 阶段清空旧状态，并在 `BeforeSceneLoad` 捕获主线程。注入器构造和每次调用都会检查该身份，随后才检查 Unity 对象是否为 `null`（包括已销毁对象）；未初始化、工作线程构造或工作线程调用都会 fail-closed。不要把注入器当作跨线程调度器，生产代码应在 Unity 初始化完成后从主线程创建和调用它。
 
 反射成员注入目前只在 Editor EditMode 中得到验证。IL2CPP、托管代码剥离和 AOT 构建覆盖尚未证明；上线前必须为反射访问提供 `link.xml`/保留策略并进行目标平台构建验证，或改为生成式/显式注入方案。
 
@@ -73,7 +73,7 @@ export UNITY_EDITOR='/path/to/Unity'
 node scripts/harness/verify.mjs --full
 ```
 
-完整模式默认把当前仓库作为 Unity 项目路径，`UNITY_EDITOR` 是唯一必需的环境变量。只有在验证另一个兼容宿主时，才设置可选的 `RAZOR_UNITY_PROJECT`。详细工作流见 [Harness 维护指南](docs/HARNESS.md)。开始实质工作前，请阅读 [AGENTS.md](AGENTS.md)、`feature_list.json`、`progress.md` 与 `session-handoff.md`。
+完整模式默认把当前仓库作为 Unity 项目路径，`UNITY_EDITOR` 是唯一必需的环境变量。只有在验证另一个兼容宿主时，才设置可选的 `RAZOR_UNITY_PROJECT`。详细工作流见 [Harness 维护指南](docs/HARNESS.md)。旧框架迁移的历史风险保存在 [旧 RazorFramework 历史审计](docs/legacy-framework-audit.md)，需在 feat-003 重新核对。开始实质工作前，请阅读 [AGENTS.md](AGENTS.md)、`feature_list.json`、`progress.md` 与 `session-handoff.md`。
 
 ## 版本控制边界
 

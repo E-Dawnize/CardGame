@@ -29,7 +29,7 @@
         "Pure C# and consuming Unity EditMode tests cover the specified behavior",
         "Portable and full Harness verification pass with the legacy root DI implementation removed"
       ],
-      "evidence": "2026-08-09: node --test scripts/harness/tests/*.test.mjs passed 36/36 with 0 failures; node scripts/harness/verify.mjs passed 24 checks with 1 expected portable-mode warning and 0 failures; with UNITY_EDITOR set to Unity 6000.3.10f1, node scripts/harness/verify.mjs --full passed 25 checks with 0 warnings and 0 failures, including fresh EditMode XML with 65 passed and 0 failed tests; git diff --check exited 0. IL2CPP/linker stripping/AOT coverage remains unproven and is explicitly recorded in README, DESIGN-REVIEW, and docs/HARNESS."
+      "evidence": "2026-08-10 final-review fix: node --test scripts/harness/tests/*.test.mjs passed 45/45 with 0 failures; node scripts/harness/verify.mjs passed 25 checks with 1 expected portable-mode warning and 0 failures; with UNITY_EDITOR set to Unity 6000.3.10f1, node scripts/harness/verify.mjs --full passed 26 checks with 0 warnings and 0 failures, including fresh EditMode XML with 67 passed and 0 failed tests. Coverage includes Unity-initialized main-thread guarding, structured scope dependency paths, recursive legacy DI rejection, trivia-aware Unity token fixtures, asmdef fields, and durable Chinese document corruption checks. IL2CPP/linker stripping/AOT and target-platform builds remain unproven and are explicitly recorded."
     },
     {
       "id": "feat-003",

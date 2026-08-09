@@ -24,18 +24,16 @@ namespace RazorFramework.Unity.DI
                 new ConcurrentDictionary<Type, Lazy<MemberPlan[]>>();
 
         private readonly IServiceResolver _resolver;
-        private readonly int _ownerThreadId;
-
         public UnityObjectInjector(IServiceResolver resolver)
         {
+            UnityMainThread.EnsureCurrent();
             _resolver = resolver ??
                 throw new ArgumentNullException(nameof(resolver));
-            _ownerThreadId = Thread.CurrentThread.ManagedThreadId;
         }
 
         public void Inject(UnityEngine.Object target)
         {
-            EnsureOwnerThread();
+            UnityMainThread.EnsureCurrent();
             if (target == null)
             {
                 return;
@@ -81,16 +79,6 @@ namespace RazorFramework.Unity.DI
                         plan.ServiceType,
                         error);
                 }
-            }
-        }
-
-        private void EnsureOwnerThread()
-        {
-            if (Thread.CurrentThread.ManagedThreadId != _ownerThreadId)
-            {
-                throw new UnityInjectionException(
-                    UnityInjectionErrorCode.WrongThread,
-                    "Unity object injection must run on the injector owner thread.");
             }
         }
 

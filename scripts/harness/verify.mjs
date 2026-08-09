@@ -219,11 +219,44 @@ function extractCSharpInterpolationExpressions(source) {
 }
 
 function containsQualifiedUnityReference(source) {
-  const qualifiedUnity = /\bUnityEngine\.[A-Za-z_]\w*/;
+  const qualifiedUnity = /\bUnityEngine\s*\.\s*[A-Za-z_]\w*/;
   if (qualifiedUnity.test(maskCSharpCommentsAndStrings(source))) return true;
   return extractCSharpInterpolationExpressions(source).some((expression) =>
     qualifiedUnity.test(maskCSharpCommentsAndStrings(expression))
   );
+}
+
+async function checkDurableDiDocuments() {
+  const documents = [
+    "docs/superpowers/specs/2026-08-04-di-v2-design.md",
+    "docs/superpowers/plans/2026-08-04-di-v2.md"
+  ];
+  let valid = 0;
+  for (const relative of documents) {
+    let value;
+    try {
+      value = await text(relative);
+    } catch {
+      fail(relative + " is missing");
+      continue;
+    }
+
+    if (/\?{12,}/.test(value) || /\uFFFD{3,}/.test(value)) {
+      fail(relative + " contains a suspicious run of replacement question marks");
+      continue;
+    }
+
+    const chineseCharacters = value.match(/[\u3400-\u4DBF\u4E00-\u9FFF]/g) ?? [];
+    if (chineseCharacters.length < 20) {
+      fail(relative + " contains too little Chinese text for a durable Chinese design document");
+      continue;
+    }
+    valid += 1;
+  }
+
+  if (valid === documents.length) {
+    pass("Durable DI design documents passed corruption checks");
+  }
 }
 
 function checkFeatureState(state) {
@@ -474,6 +507,12 @@ async function checkPureCSharpDiBoundary() {
     if (assembly.name !== "RazorFramework.DI") {
       fail("RazorFramework.DI.asmdef must name RazorFramework.DI");
     }
+    if (assembly.rootNamespace !== "RazorFramework.DI") {
+      fail("RazorFramework.DI.asmdef must set rootNamespace to RazorFramework.DI");
+    }
+    if (assembly.autoReferenced !== true) {
+      fail("RazorFramework.DI.asmdef must set autoReferenced to true");
+    }
     if (assembly.noEngineReferences !== true) {
       fail("RazorFramework.DI.asmdef must set noEngineReferences to true");
     }
@@ -484,10 +523,19 @@ async function checkPureCSharpDiBoundary() {
     fail("RazorFramework.DI.asmdef is missing or invalid JSON");
   }
 
+  let legacyFiles = [];
   try {
-    await text("DI/DIContainer.cs");
-    fail("Legacy root DI/DIContainer.cs must be removed");
-  } catch {
+    legacyFiles = await walk(path.join(ROOT, "DI"), ".cs");
+  } catch (error) {
+    if (error.code !== "ENOENT") {
+      fail("Unable to inspect legacy root DI/: " + error.message);
+    }
+  }
+  for (const file of legacyFiles) {
+    const relative = path.relative(ROOT, file).replaceAll("\\", "/");
+    fail("Legacy root DI source must be absent: " + relative);
+  }
+  if (legacyFiles.length === 0) {
     pass("Legacy root DI implementation is absent");
   }
 
@@ -731,6 +779,7 @@ async function main() {
   }
 
   await checkSuperpowers();
+  await checkDurableDiDocuments();
   await checkUnityProjectHost();
   await checkPureCSharpDiBoundary();
   await checkCSharpBoundaries();
