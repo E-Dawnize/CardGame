@@ -1,0 +1,8 @@
+{
+  "name": "RazorFramework.Unity.DI",
+  "rootNamespace": "RazorFramework.Unity.DI",
+  "references": [
+    "RazorFramework.DI"
+  ],
+  "autoReferenced": false
+}

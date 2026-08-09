@@ -1,0 +1,15 @@
+{
+  "name": "RazorFramework.Unity.DI.Tests",
+  "rootNamespace": "RazorFramework.Unity.DI.Tests",
+  "references": [
+    "RazorFramework.DI",
+    "RazorFramework.Unity.DI"
+  ],
+  "includePlatforms": [
+    "Editor"
+  ],
+  "optionalUnityReferences": [
+    "TestAssemblies"
+  ],
+  "autoReferenced": false
+}
