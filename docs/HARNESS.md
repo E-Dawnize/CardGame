@@ -37,13 +37,15 @@ node --test scripts/harness/tests/*.test.mjs
 `node scripts/harness/verify.mjs` 检查：
 
 - 必需 Harness 工件、功能状态和固定版本的 Superpowers 技能库；
-- 根目录旧 RazorFramework 的命名空间与纯 C# 边界；
+- DI V2 是唯一运行时 DI 实现：旧根目录 `DI/DIContainer.cs` 必须不存在；
+- `Assets/Plugins/RazorFramework/DI/` 的每个 C# 文件必须属于 `RazorFramework.DI`，且不得出现实际代码中的 `UnityEngine` 引用；`RazorFramework.DI.asmdef` 必须启用 `noEngineReferences: true` 且不引用其他程序集；
+- 其余尚未迁入的根目录 RazorFramework 模块的命名空间边界；
 - CardGame Unity 宿主：Unity `6000.3.10f1`、`E-Dawnize / CardGame` 身份、`com.edawnize.cardgame`、四个关键包，以及第一个启用的 Bootstrap 场景；
 - `git diff --check`。
 
 便携模式不启动 Unity，因此不能代替实际 C# 编译或场景加载。若宿主检查失败，先检查 `ProjectSettings/`、`Packages/manifest.json` 和 `Assets/CardGame/Scenes/Bootstrap.unity` 是否被移动、删改或使用了错误版本。
 
-当前已知警告是 `DI/DIContainer.cs` 中单个 `UnityEngine.Object` 空值判断债务，由 feat-002 跟踪；新增 DI Unity 引用仍然会失败。
+便携模式唯一的预期警告是“没有运行 Unity”。它不能证明 C# 编译、反射注入或场景加载；这些由完整模式提供 Editor EditMode 证据。Harness 的文本扫描会忽略注释和普通字符串，但会检查插值字符串中的实际表达式，避免借由文本伪装绕过 DI 纯 C# 门禁。
 
 ## 完整 Unity 验证
 
@@ -73,6 +75,8 @@ Harness 有意不传 `-quit`，避免 Unity 在测试运行前被提前终止。
 显式 `--full` 代表请求完整证据；如果未设置 `UNITY_EDITOR`，Harness 会输出 `[FAIL]`、提示设置 Unity `6000.3.10f1` 可执行文件并返回非零状态。这个行为与便携模式不同：便携模式不要求编辑器，只会说明没有运行 Unity。完整模式使用小型栈式解析器验证 XML 的单根结构、内部标签嵌套与属性唯一性，并拒绝 DOCTYPE、根外非空文本、`passed=0`、非十进制整数、超出 JavaScript 安全整数范围的计数，以及 `total` 与 `passed + failed + skipped + inconclusive` 不一致的结果。
 
 Harness 不依据 Unity 自动生成的 `.sln` 或 `.csproj` 触发 `dotnet test`，因为它们不是 CardGame 的独立测试宿主。
+
+完整 EditMode 成功也不等同于 IL2CPP 发布验证。`UnityObjectInjector` 使用反射；linker stripping、AOT 和目标平台构建尚未由 Harness 覆盖。发布前必须单独提供 `link.xml`/保留策略并做目标平台构建验证，或采用生成式/显式注入替代方案。
 
 ## 维护规则
 

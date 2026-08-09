@@ -20,7 +20,7 @@
       "name": "Pure C# DI Boundary",
       "description": "Replace the legacy DIContainer with a strict immutable DI v2 core under Assets/Plugins/RazorFramework, plus a Unity-only object injection adapter.",
       "dependencies": ["feat-005"],
-      "status": "in-progress",
+      "status": "done",
       "doneCriteria": [
         "RazorFramework.DI is immutable after build and has no compile-time UnityEngine reference",
         "Build-time validation covers registration, constructor, dependency cycle, and hierarchical scope lifetime errors",
@@ -29,7 +29,7 @@
         "Pure C# and consuming Unity EditMode tests cover the specified behavior",
         "Portable and full Harness verification pass with the legacy root DI implementation removed"
       ],
-      "evidence": ""
+      "evidence": "2026-08-09: node --test scripts/harness/tests/*.test.mjs passed 36/36 with 0 failures; node scripts/harness/verify.mjs passed 24 checks with 1 expected portable-mode warning and 0 failures; with UNITY_EDITOR set to Unity 6000.3.10f1, node scripts/harness/verify.mjs --full passed 25 checks with 0 warnings and 0 failures, including fresh EditMode XML with 65 passed and 0 failed tests; git diff --check exited 0. IL2CPP/linker stripping/AOT coverage remains unproven and is explicitly recorded in README, DESIGN-REVIEW, and docs/HARNESS."
     },
     {
       "id": "feat-003",

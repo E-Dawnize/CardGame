@@ -2,38 +2,33 @@
 
 ## 当前状态
 
-- `feat-005 CardGame Unity Project Host` 已完成；当前没有 `in-progress` 功能。
-- 分支：`main`；Unity 宿主阶段已 fast-forward 合并到提交 `6356358`。
-- `.worktrees/unity-project-host` 隔离工作树与 `codex/unity-project-host` 分支已清理。
-- Unity 项目根目录已可由 Harness 以 Unity `6000.3.10f1` 进行 EditMode 验证。
+- `feat-002 Pure C# DI Boundary` 已完成；当前没有 `in-progress` 功能。
+- 工作分支：`codex/di-v2`；DI V2 实现、Harness 门禁和中文维护文档均在该分支。
+- CardGame 唯一 DI 实现在 `Assets/Plugins/RazorFramework/DI/`；旧根目录 `DI/DIContainer.cs` 已删除。
+- Unity 注入适配器位于 `Assets/Plugins/RazorFramework/Unity/DI/`，必须在其创建时所在的 owner thread 使用。
 
 ## 已完成内容
 
-- 已迁入并整理获批准的 `Assets/`、`Packages/`、`ProjectSettings/` 项目基底；缓存和生成工程文件没有迁入或跟踪。
-- 已规范化项目身份为 `E-Dawnize / CardGame` 与 `com.edawnize.cardgame`，首个启用场景为 `Assets/CardGame/Scenes/Bootstrap.unity`。
-- 已建立 Node 宿主契约、Unity EditMode 冒烟测试和完整 Harness 入口；旧 RazorFramework 源码仍留在根目录，不进入本阶段 Unity 编译范围。
+- `ContainerBuilder` 在 `Build()` 后冻结注册并验证依赖图；容器支持 Singleton、层级 Scoped、Transient、集合解析、可选解析、诊断和确定性释放。
+- `RazorFramework.DI` 通过程序集设置和 Harness 同时保证为纯 C#；`RazorFramework.Unity.DI` 负责 Unity 对象的成员注入及结构化错误。
+- Harness 会验证旧 DI 已删除、DI V2 命名空间/程序集/Unity 引用边界，以及真实 Unity EditMode 结果。
+- README、`DESIGN-REVIEW.md` 和 `docs/HARNESS.md` 已中文化并记录 API 使用方式与维护限制。
 
-## 最新验证证据（2026-08-04）
+## 最新验证证据（2026-08-09）
 
 | 检查 | 结果 |
 |---|---|
-| `node --test scripts/harness/tests/*.test.mjs` | 25/25 通过，0 失败 |
-| `node scripts/harness/verify.mjs` | 22 passed、2 warning(s)、0 failure(s) |
-| `UNITY_EDITOR='C:\Program Files\Unity\Hub\Editor\6000.3.10f1\Editor\Unity.exe'` 后运行 `node scripts/harness/verify.mjs --full` | 23 passed、1 warning(s)、0 failure(s)；EditMode XML：3/3 通过，0 失败 |
-| `git diff --check` | 干净 |
+| `node --test scripts/harness/tests/*.test.mjs` | 36/36 通过，0 失败 |
+| `node scripts/harness/verify.mjs` | 24 passed、1 个预期 warning、0 failure；警告仅为便携模式未启动 Unity |
+| 设置 `UNITY_EDITOR='C:\Program Files\Unity\Hub\Editor\6000.3.10f1\Editor\Unity.exe'` 后运行 `node scripts/harness/verify.mjs --full` | 25 passed、0 warning、0 failure；新鲜 EditMode XML 为 65 passed、0 failed |
+| `git diff --check` | 干净，退出码 0 |
 
-唯一保留警告是 feat-002 跟踪的 `DI/DIContainer.cs` Unity 空值判断债务。模板包尚未精简；这不是本功能遗漏的完成项。
+## 已知限制
 
-## 下一步
+- 当前 Unity 注入基于反射；IL2CPP、托管代码剥离和 AOT 兼容性尚未验证。发布前必须加入并验证 `link.xml`/保留策略和目标平台构建，或采用生成式/显式注入。
+- owner-thread 检查只保证在注入器构造线程调用；它不替代 Unity 主线程调度。
+- 本分支未实现卡牌战斗、伤害结算、地图、叙事节点、存档、文案流程或数值系统。
 
-按 brainstorming 流程为 `feat-002 Pure C# DI Boundary` 编写独立重构规格，先消除 DI 对 `UnityEngine` 的编译时依赖；规格批准前不修改运行时代码。
+## 下一可执行步
 
-## 范围提醒
-
-玩法尚未实现：卡牌战斗、伤害结算、地图、叙事节点、存档、文案协作规则与数值模拟都必须在各自独立功能中设计、测试并验证。
-
-## 最终审查后的 Harness 契约
-
-- `--full` 明确要求 Unity 运行证据；未设置 `UNITY_EDITOR` 时必须 `[FAIL]` 且非零退出。
-- EditMode XML 必须是单根、内部标签正确嵌套且属性唯一的良构文档；计数必须是 JavaScript 安全整数，并满足 `total > 0`、`passed > 0`、`failed = 0` 与 `passed + failed + skipped + inconclusive = total`。
-- 最新证据：Node 测试 25/25；便携 Harness 22 passed、2 warning(s)、0 failure(s)；Unity 完整 Harness 23 passed、1 warning(s)、0 failure(s)，实际 XML 3/3 通过。
+为 `feat-003 Assembly Definition Boundaries` 执行 **brainstorming**，先产出已批准的程序集依赖边界与迁移策略；不要假定其已经开始，也不要未经规格批准迁入根目录旧模块。

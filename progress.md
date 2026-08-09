@@ -2,48 +2,35 @@
 
 ## 当前状态
 
-**最后更新：** 2026-08-04 +08:00
-**当前功能：** 无；feat-005 CardGame Unity Project Host 已完成。
-**状态：** Unity 宿主阶段已合并到 `main`；正在为下一项独立功能做设计澄清。
+**最后更新：** 2026-08-09 +08:00
+**当前功能：** 无；feat-002 Pure C# DI Boundary 已完成。
+**状态：** DI V2 已成为 CardGame 唯一 DI 实现，完整 Unity EditMode 证据已更新。
 
-## 阶段性收尾（2026-08-04）
+## 本次完成：feat-002 Pure C# DI Boundary
 
-- `codex/unity-project-host` 已以 fast-forward 方式合并到 `main`，合并头为 `6356358`。
-- 合并前与合并后均重新执行 Node 契约测试和真实 Unity 完整 Harness；Node 为 25/25 通过，完整 Harness 为 23 passed、1 个已知 DI warning、0 failure。
-- 已删除 `.worktrees/unity-project-host` 隔离工作树和已合并功能分支；当前工作分支为 `main`。
-- 下一阶段按依赖顺序从 `feat-002 Pure C# DI Boundary` 开始设计，不在规格批准前迁入或修改旧框架运行时代码。
+- 以 `Assets/Plugins/RazorFramework/DI/` 中的 `RazorFramework.DI` 替换旧 `DI/DIContainer.cs`；核心程序集不引用 Unity，构建后注册表不可变。
+- 支持 Singleton、层级 Scoped、Transient、确定性逆序释放、`TryResolve`、`ResolveAll<T>` 和不影响容器行为的诊断接收器。
+- 在 `Assets/Plugins/RazorFramework/Unity/DI/` 增加 Unity 对象注入适配器。它在创建线程上执行，安全处理 Unity 已销毁对象，并为成员定义和依赖失败提供结构化异常。
+- Harness 已将“旧 DI 不存在”和“DI V2 纯 C# 边界”设为通过条件；旧 DI 的 Unity 空值判断警告已删除。
+- README、架构审查和 Harness 指南均已更新为中文，并记录运行限制与下一阶段。
 
-## 本次完成
-
-- 完成 Unity `6000.3.10f1` 项目宿主迁移与验证；允许迁入的项目根目录为 `Assets/`、`Packages/` 与 `ProjectSettings/`，并保留所需 `.meta` 文件。
-- 模板场景与设置已归入 `Assets/CardGame/`：首个启用构建场景为 `Assets/CardGame/Scenes/Bootstrap.unity`；项目身份为 `E-Dawnize / CardGame`，Standalone identifier 为 `com.edawnize.cardgame`。
-- Harness 已固定验证 Unity 版本、项目身份、首个启用场景和四个关键包版本：URP `17.3.0`、Input System `1.18.0`、Unity Test Framework `1.6.0`、UGUI `2.0.0`。
-- 旧 RazorFramework 源码仍位于仓库根目录，只作为后续重构输入；本次未将其迁入 `Assets/Plugins/RazorFramework/`，因此不属于 Unity 编译对象。
-
-## 最终验证证据（2026-08-02）
+## 最终验证证据（2026-08-09）
 
 | 检查 | 命令 | 实际结果 |
 |---|---|---|
-| Node 契约测试 | `node --test scripts/harness/tests/*.test.mjs` | 25/25 通过，0 失败 |
-| 便携 Harness | `node scripts/harness/verify.mjs` | 22 passed、2 warning(s)、0 failure(s) |
-| Unity 完整 Harness | `$env:UNITY_EDITOR='C:\Program Files\Unity\Hub\Editor\6000.3.10f1\Editor\Unity.exe'; node scripts/harness/verify.mjs --full` | 23 passed、1 warning(s)、0 failure(s) |
-| Unity EditMode XML | 完整 Harness 新生成的结果 XML | `result=Passed`、`total=3`、`passed=3`、`failed=0` |
+| Node 契约测试 | `node --test scripts/harness/tests/*.test.mjs` | 36/36 通过，0 失败 |
+| 便携 Harness | `node scripts/harness/verify.mjs` | 24 passed、1 个预期 warning、0 failure；警告仅表示未运行 Unity |
+| Unity 完整 Harness | `$env:UNITY_EDITOR='C:\Program Files\Unity\Hub\Editor\6000.3.10f1\Editor\Unity.exe'; node scripts/harness/verify.mjs --full` | 25 passed、0 warning、0 failure |
+| Unity EditMode XML | 完整 Harness 新生成的结果 XML | 65 passed、0 failed |
 | 差异检查 | `git diff --check` | 无输出，退出码 0 |
-
-完整验证实际使用 Unity `6000.3.10f1`。首次导入后的工作树保持干净，`Packages/packages-lock.json` 没有额外差异；`Library/`、`Temp/`、`Logs/`、`UserSettings/`、`.sln`、`.slnx` 与 `.csproj` 均未被 Git 跟踪。
 
 ## 已知限制与后续边界
 
-- 便携模式仍保留两项预期警告：`DI/DIContainer.cs` 的 Unity 空值判断债务（由 feat-002 跟踪）以及未运行 Unity；完整模式已实际完成 Unity 编译与 EditMode 测试，只保留前者警告。
-- 本功能未精简模板包；包精简必须在独立功能中以导入测试保护。
-- 本功能只建立项目宿主、迁移基底和验证基础设施，尚未实现卡牌战斗、地图、剧情、存档、文案内容管线或数值模拟。
+- `UnityObjectInjector` 的 owner thread 是其构造时线程；调用方必须在 Unity 线程构造并调用，适配器不提供工作线程调度。
+- Unity 反射注入只在 Editor EditMode 验证。IL2CPP、linker stripping 和 AOT 仍未证明；发布前必须增加并验证 `link.xml`/保留策略与目标平台构建，或切换至生成式/显式注入。
+- feat-003 Assembly Definition Boundaries 尚未开始。根目录 `Boot`、`Events`、`Input`、`Lifecycle`、`MVVM` 尚未进入 Unity 编译范围，后续迁入必须独立设计依赖方向。
+- 卡牌战斗、伤害结算、地图、叙事节点、存档、文案协作规则与数值模拟均尚未实现，不能从 DI V2 完成状态推断其已具备。
 
 ## 下一步
 
-1. 为 RazorFramework Core、DI 与 Lifecycle 编写独立重构规格和实施计划，先消除 DI 对 `UnityEngine` 的编译时依赖。
-
-## 最终审查修复证据
-
-- 显式执行 `node scripts/harness/verify.mjs --full` 且清除 `UNITY_EDITOR` 时，命令输出 `[FAIL]` 与 Unity `6000.3.10f1` 设置提示，并以非零状态退出；完整模式不再以“未运行”警告假绿。
-- Unity 结果验证使用栈式 XML 解析，拒绝内部标签未闭合或错配、多个根元素、重复属性、DOCTYPE、根外非空文本、非整数计数、超出 JavaScript 安全整数范围的计数与分类计数矛盾；实际 Unity 新鲜 XML 仍为 `result=Passed`、`total=3`、`passed=3`、`failed=0`。
-- 最终 Node 契约测试为 25/25 通过；便携 Harness 为 22 passed、2 warning(s)、0 failure(s)；真实 Unity 完整 Harness 为 23 passed、1 warning(s)、0 failure(s)。
+1. 对 feat-003 Assembly Definition Boundaries 执行 brainstorming：先确定模块图、允许依赖方向、测试程序集引用与迁移顺序；不要在尚未批准规格前修改程序集边界或玩法代码。
