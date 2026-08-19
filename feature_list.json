@@ -36,11 +36,13 @@
       "name": "Assembly Definition Boundaries",
       "description": "Add Unity Assembly Definition files that enforce the dependency directions documented in DESIGN-REVIEW.md.",
       "dependencies": ["feat-002"],
-      "status": "not-started",
+      "status": "in-progress",
       "doneCriteria": [
-        "Each framework module has an Assembly Definition",
-        "Unity compiles the dependency graph in a consuming project",
-        "Pure C# module boundaries remain free of Unity references"
+        "Events, Lifecycle, MVVM, and Boot framework modules each have an Assembly Definition",
+        "Unity compiles the dependency graph with pure C# modules free of UnityEngine references",
+        "Legacy root Events/Lifecycle/MVVM/Input/Boot contain no C# in the Unity compilation scope",
+        "Portable and full Harness verification pass with real Unity EditMode evidence",
+        "README, DESIGN-REVIEW, HARNESS, progress, and handoff describe the boundaries in Chinese"
       ],
       "evidence": ""
     },
