@@ -415,7 +415,6 @@ async function checkUnityProjectHost() {
 async function checkCSharpBoundaries() {
   const modules = new Map([
     ["Lifecycle", "RazorFramework.Lifecycle"],
-    ["Events", "RazorFramework.Events"],
     ["MVVM", "RazorFramework.MVVM"],
     ["Input", "RazorFramework.Input"],
     ["Boot", "RazorFramework.Boot"]
@@ -542,6 +541,60 @@ async function checkPureCSharpDiBoundary() {
   if (failures.length === 0) {
     pass("RazorFramework.DI pure-C# boundary validated");
   }
+}
+
+async function checkPureCSharpEventsBoundary() {
+  const sourceDirectory = path.join(ROOT, "Assets", "Plugins", "RazorFramework", "Events");
+  let files;
+  try {
+    files = await walk(sourceDirectory, ".cs");
+  } catch {
+    fail("RazorFramework.Events source module is missing: Assets/Plugins/RazorFramework/Events/");
+    return;
+  }
+
+  if (files.length === 0) fail("RazorFramework.Events source module contains no C# files");
+
+  for (const file of files) {
+    const relative = path.relative(ROOT, file).replaceAll("\\", "/");
+    const value = await readFile(file, "utf8");
+    const code = maskCSharpCommentsAndStrings(value);
+    const namespaceDeclarations = extractCSharpNamespaceDeclarations(value);
+    if (namespaceDeclarations.length === 0) fail(relative + " is outside namespace RazorFramework.Events");
+    for (const namespaceName of namespaceDeclarations) {
+      if (namespaceName !== "RazorFramework.Events" && !namespaceName.startsWith("RazorFramework.Events.")) {
+        fail(relative + " is outside namespace RazorFramework.Events");
+      }
+    }
+    const importsUnity = /^\s*(?:global\s+)?using\s+(?:(?:static\s+)?|(?:[A-Za-z_]\w*\s*=\s*))?(?:global::)?UnityEngine(?:\.[A-Za-z_]\w*)*\s*;/m.test(code);
+    const qualifiedUnity = containsQualifiedUnityReference(value);
+    if (importsUnity || qualifiedUnity) fail(relative + " violates the RazorFramework.Events BCL-only boundary");
+  }
+
+  try {
+    const assembly = JSON.parse(await text("Assets/Plugins/RazorFramework/Events/RazorFramework.Events.asmdef"));
+    if (assembly.name !== "RazorFramework.Events") fail("RazorFramework.Events.asmdef must name RazorFramework.Events");
+    if (assembly.rootNamespace !== "RazorFramework.Events") fail("RazorFramework.Events.asmdef must set rootNamespace to RazorFramework.Events");
+    if (assembly.autoReferenced !== true) fail("RazorFramework.Events.asmdef must set autoReferenced to true");
+    if (assembly.noEngineReferences !== true) fail("RazorFramework.Events.asmdef must set noEngineReferences to true");
+    if (!Array.isArray(assembly.references) || assembly.references.length !== 0) fail("RazorFramework.Events.asmdef must declare no assembly references");
+  } catch {
+    fail("RazorFramework.Events.asmdef is missing or invalid JSON");
+  }
+
+  let legacyFiles = [];
+  try {
+    legacyFiles = await walk(path.join(ROOT, "Events"), ".cs");
+  } catch (error) {
+    if (error.code !== "ENOENT") fail("Unable to inspect legacy root Events/: " + error.message);
+  }
+  for (const file of legacyFiles) {
+    const relative = path.relative(ROOT, file).replaceAll("\\", "/");
+    fail("Legacy root Events source must be absent: " + relative);
+  }
+  if (legacyFiles.length === 0) pass("Legacy root Events implementation is absent");
+
+  if (failures.length === 0) pass("RazorFramework.Events pure-C# boundary validated");
 }
 
 function run(command, args, capture, timeout) {
@@ -782,6 +835,7 @@ async function main() {
   await checkDurableDiDocuments();
   await checkUnityProjectHost();
   await checkPureCSharpDiBoundary();
+  await checkPureCSharpEventsBoundary();
   await checkCSharpBoundaries();
   checkGitDiff();
 

@@ -1,0 +1,14 @@
+{
+  "name": "RazorFramework.Events.Tests",
+  "rootNamespace": "RazorFramework.Events.Tests",
+  "references": [
+    "RazorFramework.Events"
+  ],
+  "includePlatforms": [
+    "Editor"
+  ],
+  "optionalUnityReferences": [
+    "TestAssemblies"
+  ],
+  "autoReferenced": false
+}

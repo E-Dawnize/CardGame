@@ -7,18 +7,15 @@ namespace RazorFramework.Events
     /// 强类型事件总线实现。事件必须是 struct，基于 Delegate 字典分发。
     /// 线程安全：所有操作对 _eventHandlers 加锁保护。
     /// </summary>
-    public class EventManager : IEventCenter, IDisposable
+    public sealed class EventManager : IEventCenter, IDisposable
     {
         private readonly Dictionary<Type, Delegate> _eventHandlers = new();
         private readonly object _lock = new();
 
-        /// <summary>IInitializable.Initialize — 当前为空操作，预留给子类扩展</summary>
-        public void Initialize() { }
-
         public void Subscribe<T>(Action<T> handler) where T : struct
         {
             if (handler == null) throw new ArgumentNullException(nameof(handler));
-            Type type = typeof(T);
+            var type = typeof(T);
             lock (_lock)
             {
                 if (_eventHandlers.TryGetValue(type, out var existing))
@@ -31,26 +28,26 @@ namespace RazorFramework.Events
         public void Unsubscribe<T>(Action<T> handler) where T : struct
         {
             if (handler == null) return;
-            Type type = typeof(T);
+            var type = typeof(T);
             lock (_lock)
             {
                 if (!_eventHandlers.TryGetValue(type, out var existing)) return;
-                var newHandler = Delegate.Remove(existing, handler);
-                if (newHandler == null)
+                var next = Delegate.Remove(existing, handler);
+                if (next == null)
                     _eventHandlers.Remove(type);
                 else
-                    _eventHandlers[type] = newHandler;
+                    _eventHandlers[type] = next;
             }
         }
 
-        public void Publish<T>(T message) where T : struct
+        public void Publish<T>(T evt) where T : struct
         {
             Delegate handler;
             lock (_lock)
             {
                 _eventHandlers.TryGetValue(typeof(T), out handler);
             }
-            (handler as Action<T>)?.Invoke(message);
+            (handler as Action<T>)?.Invoke(evt);
         }
 
         /// <summary>当前订阅数（诊断用）</summary>

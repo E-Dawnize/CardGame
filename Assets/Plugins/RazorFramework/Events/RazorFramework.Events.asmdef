@@ -1,0 +1,7 @@
+{
+  "name": "RazorFramework.Events",
+  "rootNamespace": "RazorFramework.Events",
+  "references": [],
+  "autoReferenced": true,
+  "noEngineReferences": true
+}
