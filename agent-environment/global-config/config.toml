@@ -1,0 +1,111 @@
+model_provider = "custom"
+model = "deepseek-v4-pro"
+model_catalog_json = "model-catalogs/relay-mt02aicy.json"
+model_reasoning_effort = "high"
+
+notify = [ "C:\\Users\\13746\\AppData\\Local\\OpenAI\\Codex\\runtimes\\cua_node\\759ccb73c5d75f83\\bin\\node_modules\\@oai\\sky\\bin\\windows\\codex-computer-use.exe", "turn-ended" ]
+[model_providers.custom]
+name = "custom"
+wire_api = "responses"
+base_url = "http://127.0.0.1:57321/v1"
+
+[desktop]
+followUpQueueMode = "queue"
+conversationDetailMode = "STEPS_PROSE"
+sansFontSize = 14
+codeFontSize = 13
+ambient-suggestions-enabled = true
+show-context-window-usage = true
+integratedTerminalShell = "gitBash"
+localeOverride = "zh-CN"
+
+[mcp_servers]
+
+[mcp_servers.node_repl]
+args = []
+command = 'C:\Users\13746\AppData\Local\OpenAI\Codex\runtimes\cua_node\759ccb73c5d75f83\bin\node_repl.exe'
+startup_timeout_sec = 120
+
+[mcp_servers.node_repl.env]
+NODE_REPL_NATIVE_PIPE_CONNECT_TIMEOUT_MS = "1000"
+NODE_REPL_NODE_MODULE_DIRS = 'C:\Users\13746\AppData\Local\OpenAI\Codex\runtimes\cua_node\759ccb73c5d75f83\bin\node_modules'
+NODE_REPL_NODE_PATH = 'C:\Users\13746\AppData\Local\OpenAI\Codex\runtimes\cua_node\759ccb73c5d75f83\bin\node.exe'
+NODE_REPL_TRUSTED_CODE_PATHS = 'C:\Users\13746\.codex;C:\Users\13746\AppData\Local\OpenAI\Codex\runtimes\cua_node\759ccb73c5d75f83\bin\node_modules'
+CODEX_HOME = 'C:\Users\13746\.codex'
+BROWSER_USE_AVAILABLE_BACKENDS = "chrome,iab"
+BROWSER_USE_TINYSKY_ENABLED = "0"
+NODE_REPL_INSTRUCTIONS_USE_CASE_BROWSER = "Control the in-app browser in conjunction with the Browser Plugin."
+NODE_REPL_INSTRUCTIONS_USE_CASE_CHROME = "Control the Chrome browser in conjunction with the Chrome Plugin. Prefer this method of controlling Chrome over alternatives (such as Computer Use) unless the user explicitly mentions an alternative."
+BROWSER_USE_CODEX_APP_BUILD_FLAVOR = "prod"
+BROWSER_USE_CODEX_APP_VERSION = "26.825.31414"
+NODE_REPL_TRUSTED_SERVICES = '{"browser":"C:/Users/13746/.codex/plugins/cache/openai-bundled/browser/26.825.31414/scripts/browser-service.mjs","sky":"@oai/sky/service"}'
+SKY_CUA_NATIVE_PIPE = "1"
+SKY_CUA_NATIVE_PIPE_DIRECTORY = '\\.\pipe\codex-computer-use-1c2c30c7-de54-459a-a3a8-417d57a50745'
+CODEX_CLI_PATH = 'C:\Users\13746\AppData\Local\OpenAI\Codex\bin\d664d99528113e03\codex.exe'
+
+[mcp_servers.cua_repl]
+command = 'C:\Program Files\WindowsApps\OpenAI.Codex_26.825.3734.0_x64__2p2nqsd0c76g0\app\ChatGPT.exe'
+enabled = false
+
+[marketplaces.openai-curated]
+source_type = "local"
+source = '\\?\C:\Users\13746\.codex\.tmp\plugins'
+
+[marketplaces.openai-api-curated]
+source_type = "local"
+source = '\\?\C:\Users\13746\.codex\.tmp\plugins'
+
+[marketplaces.openai-primary-runtime]
+source_type = "local"
+source = '\\?\C:\Users\13746\.cache\codex-runtimes\codex-primary-runtime\plugins\openai-primary-runtime'
+
+[windows]
+sandbox = "elevated"
+
+[marketplaces]
+
+[marketplaces.openai-bundled]
+source_type = "local"
+source = '\\?\C:\Users\13746\.codex\.tmp\bundled-marketplaces\openai-bundled'
+
+[plugins]
+
+[plugins."codex-app-tools@openai-bundled"]
+enabled = true
+
+[plugins."browser@openai-bundled"]
+enabled = true
+
+[plugins."visualize@openai-bundled"]
+enabled = true
+
+[plugins."github@openai-curated"]
+enabled = true
+
+[plugins."documents@openai-primary-runtime"]
+enabled = true
+
+[plugins."pdf@openai-primary-runtime"]
+enabled = true
+
+[plugins."spreadsheets@openai-primary-runtime"]
+enabled = true
+
+[plugins."presentations@openai-primary-runtime"]
+enabled = true
+
+[plugins."template-creator@openai-primary-runtime"]
+enabled = true
+
+[features]
+js_repl = false
+goals = true
+
+[projects.'d:\downloads\ms5r77e0p8tx9h1q\mszvd3yym1qy5ss1\outputs']
+trust_level = "trusted"
+
+[projects.'d:\downloads\ms5r77e0p8tx9h1q\msx1aq42t5uoi9gv\outputs\game-dev-deep-dive']
+trust_level = "trusted"
+
+[projects.'d:\unity project\cardgame']
+trust_level = "trusted"

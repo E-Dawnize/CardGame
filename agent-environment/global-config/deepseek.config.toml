@@ -1,0 +1,8 @@
+# Codex profile: DeepSeek (loaded via: codex --profile deepseek)
+# Ref: https://api-docs.deepseek.com/quick_start/agent_integrations/codex
+model = "deepseek-v4-flash"
+model_provider = "deepseek"
+preferred_auth_method = "apikey"
+forced_login_method = "api"
+model_reasoning_effort = "high"
+model_catalog_json = "C:/Users/13746/.codex/models.json"
