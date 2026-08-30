@@ -9,7 +9,7 @@ CardGame 是一个可运行的 Unity 项目，固定使用 Unity `6000.3.10f1`�
 1. 确认当前目录是仓库根目录，并确认不会覆盖无关的未提交改动。
 2. 完整阅读本文件。
 3. 阅读 `feature_list.json`、`progress.md` 和 `session-handoff.md`。
-4. 按任务读取相关文档：`README.md`（目录与入口）、`DESIGN-REVIEW.md`（旧框架风险）、`docs/CONTRACT.md`（游戏数据契约）和 `docs/HARNESS.md`（验证流程）。
+4. 按任务读取相关文档：`docs/design/README.md`（权威架构设计索引，边界变更必须同步对应模块文档）、`README.md`（目录与入口）、`DESIGN-REVIEW.md`（旧框架风险）、`docs/CONTRACT.md`（游戏数据契约）和 `docs/HARNESS.md`（验证流程）。
 5. 查看 `git status --short` 与 `git log --oneline -5`。
 6. 运行 `node scripts/harness/verify.mjs` 建立基线。此命令也会检查 Unity 宿主结构；若失败，必须区分既有失败和当前任务引入的失败。
 
