@@ -329,10 +329,10 @@ feat-003 净效应
 | # | 问题 | 影响 | 建议 |
 |---|---|---|---|
 | 1 | 战斗层 spike 结果（全 UITK 可行性） | 单一栈定案成立与否 | spike 通过 = 全 UITK；失败 = 战斗层回退 uGUI |
-| 2 | 数据中间格式：JSON（X1）还是直接上编译格式（X2） | 启动加载/体积 | 默认 X1，量大再 X2 |
+| 2 | ~~数据中间格式~~ 已定案：JSON（X1，feat-006 已落地） | 启动加载/体积 | X2 编译格式作为量级升级项 |
 | 3 | 转换器落点：Node + SheetJS（新增 npm 依赖）vs Unity Editor + EPPlus | 协作者是否需 Unity 才能校验 | Node（协作者无需 Unity；Harness 可校验同步） |
-| 4 | 生成的 JSON 是否提交仓库 | diff 审查能力 | 提交 |
-| 5 | Description 自动生成放转换器还是运行时 | 数值修正时文案正确性 | 运行时 |
+| 4 | ~~生成的 JSON 是否提交~~ 已定案：提交（feat-006 样例已入库） | diff 审查能力 | — |
+| 5 | ~~Description 自动生成位置~~ 已定案：运行时（feat-006 DescriptionBuilder 已实现） | 数值修正时文案正确性 | — |
 | 6 | ~~MVVM 处置~~ 已定案：选项 B（不建 MVVM 程序集，旧源码删除） | 04-mvvm.md 已退役 + feat-003 Task 4 取消 | — |
 | 7 | 新增包清单：addressables（+ npm 依赖 SheetJS） | feat-003 之外的独立 feat | 一次功能点内处理 |
 | 8 | Boot/Lifecycle 简化方案（见上节） | feat-003 剩余任务形态 | 确认后同步 03/05 文档与 feature_list |

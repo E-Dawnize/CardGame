@@ -43,7 +43,9 @@ Unity 编译域 — 现状
 ├─ RazorFramework.DI.Tests       ✅  [refs DI]  Editor only
 ├─ RazorFramework.Unity.DI.Tests ✅  [refs DI, Unity.DI]  Editor only
 ├─ RazorFramework.Events.Tests   ✅  [refs Events]  Editor only
-└─ CardGame.Tests.EditMode       ✅  Editor only（项目身份 + Bootstrap 构建场景）
+├─ CardGame.Domain               ✅  纯 C# (noEngineReferences)  [BCL only]  feat-006 新增
+├─ CardGame.Runtime              ✅  [Unity, refs Domain]  autoReferenced: false  feat-006 新增
+└─ CardGame.Tests.EditMode       ✅  [refs Domain, Runtime]  Editor only（项目身份 + 数据协议）
 
 feat-003 目标 — 剩余（2026-08-30 更新：MVVM 两程序集退役；Lifecycle/Boot 简化建议见 09-ui-resources.md，待定案）
 ├─ RazorFramework.Lifecycle            ⏳  纯 C#：生命周期接口 + LifecycleEngine

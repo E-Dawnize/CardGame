@@ -1,6 +1,6 @@
 # CardGame — 游戏层与数据契约
 
-> 位置：`Assets/CardGame/` · 状态：✅ 骨架已就位（feat-005），玩法未开始
+> 位置：`Assets/CardGame/` · 状态：✅ 骨架已就位（feat-005）；数据基础已落地（feat-006 in-progress），玩法未开始
 > 目标运行时程序集：`CardGame.Runtime`（Unity，refs 框架，feat-003 Task 5 建立）
 
 ## 结构
@@ -8,13 +8,18 @@
 ```text
 Assets/CardGame/
 ├─ Scenes/Bootstrap.unity          启动场景（构建列表唯一场景）
+├─ Runtime/
+│  ├─ CardGame.Domain/    纯 C# 数据模型/DTO 映射/校验/文案生成（noEngineReferences，feat-006）
+│  └─ CardGame.Runtime/   Unity 侧 JsonUtility 加载 + GameDataCatalog（refs Domain，feat-006）
+├─ Content/Data/          配置数据 JSON（cards/relics/enemies/status/events/dialogues/world/ui-strings）
 ├─ Settings/
 │  ├─ UniversalRP.asset / Renderer2D.asset / DefaultVolumeProfile.asset
 │  │  UniversalRenderPipelineGlobalSettings.asset    URP 管线配置
 │  ├─ InputSystem_Actions.inputactions               输入资产（生成 PlayerInput 的输入源）
 │  └─ Lit2DSceneTemplate.scenetemplate / URP2DSceneTemplate.unity   场景模板
 └─ Tests/EditMode/（CardGame.Tests.EditMode，Editor only）
-   └─ ProjectFoundationTests   项目身份 + Bootstrap 构建场景配置
+   ├─ ProjectFoundationTests   项目身份 + Bootstrap 构建场景配置
+   └─ Data/                    协议测试（枚举/映射/序列化/校验/文案/加载/样例自证）
 ```
 
 ## 数据契约（docs/CONTRACT.md）
@@ -50,5 +55,6 @@ Assets/CardGame/
 
 ## 已知限制
 
-- 无玩法实现：卡牌、战斗、地图、叙事、存档、文案均未开始。
+- 无玩法实现：卡牌、战斗、地图、叙事、存档、文案均未开始（配置表数据协议已由 feat-006 落地）。
 - 场景运行时流程未验证（仅项目身份与构建配置有 EditMode 覆盖）。
+- Excel → JSON 转换器未开始（协议先行，转换器为下一功能）。

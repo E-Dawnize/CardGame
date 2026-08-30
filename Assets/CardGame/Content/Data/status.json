@@ -1,0 +1,49 @@
+{
+  "statuses": [
+    {
+      "id": "Block",
+      "name": "格挡",
+      "iconKey": "icon_status_block",
+      "maxStack": -1,
+      "decayEachTurn": 0,
+      "effectDesc": "吸收等量伤害。回合开始时清空。",
+      "colorHex": "#8899AA"
+    },
+    {
+      "id": "Freeze",
+      "name": "冻结",
+      "iconKey": "icon_status_freeze",
+      "maxStack": 5,
+      "decayEachTurn": 1,
+      "effectDesc": "每层使目标的下一次攻击伤害 -1。每回合衰减 1 层。",
+      "colorHex": "#88BBFF"
+    },
+    {
+      "id": "Burn",
+      "name": "燃烧",
+      "iconKey": "icon_status_burn",
+      "maxStack": 10,
+      "decayEachTurn": 1,
+      "effectDesc": "回合结束时受到等量伤害。每回合衰减 1 层。",
+      "colorHex": "#FF6633"
+    },
+    {
+      "id": "Weak",
+      "name": "虚弱",
+      "iconKey": "icon_status_weak",
+      "maxStack": 5,
+      "decayEachTurn": 1,
+      "effectDesc": "造成的攻击伤害 -25%。每回合衰减 1 层。",
+      "colorHex": "#CCCCCC"
+    },
+    {
+      "id": "Vulnerable",
+      "name": "易伤",
+      "iconKey": "icon_status_vulnerable",
+      "maxStack": 5,
+      "decayEachTurn": 1,
+      "effectDesc": "受到的攻击伤害 +25%。每回合衰减 1 层。",
+      "colorHex": "#FF8844"
+    }
+  ]
+}

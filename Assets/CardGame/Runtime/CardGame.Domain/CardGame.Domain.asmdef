@@ -1,0 +1,7 @@
+{
+  "name": "CardGame.Domain",
+  "rootNamespace": "CardGame.Domain",
+  "references": [],
+  "autoReferenced": true,
+  "noEngineReferences": true
+}

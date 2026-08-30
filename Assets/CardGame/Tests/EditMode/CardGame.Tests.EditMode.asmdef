@@ -1,7 +1,10 @@
 {
   "name": "CardGame.Tests.EditMode",
   "rootNamespace": "CardGame.Tests.EditMode",
-  "references": [],
+  "references": [
+    "CardGame.Domain",
+    "CardGame.Runtime"
+  ],
   "includePlatforms": [
     "Editor"
   ],

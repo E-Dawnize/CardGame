@@ -1,0 +1,118 @@
+{
+  "groups": [
+    {
+      "id": "main_menu",
+      "entries": [
+        { "key": "title", "value": "" },
+        { "key": "new_game", "value": "开始冒险" },
+        { "key": "continue", "value": "继续旅程" },
+        { "key": "settings", "value": "设置" },
+        { "key": "credits", "value": "制作名单" },
+        { "key": "quit", "value": "退出游戏" }
+      ]
+    },
+    {
+      "id": "settings",
+      "entries": [
+        { "key": "language", "value": "语言" },
+        { "key": "bgm_volume", "value": "背景音乐" },
+        { "key": "sfx_volume", "value": "音效" },
+        { "key": "screen_shake", "value": "屏幕震动" },
+        { "key": "back", "value": "返回" }
+      ]
+    },
+    {
+      "id": "battle",
+      "entries": [
+        { "key": "end_turn", "value": "结束回合" },
+        { "key": "draw_pile", "value": "抽牌堆" },
+        { "key": "discard_pile", "value": "弃牌堆" },
+        { "key": "exhaust", "value": "消耗" },
+        { "key": "energy", "value": "能量" },
+        { "key": "turn", "value": "回合" },
+        { "key": "confirm_play", "value": "确定打出" },
+        { "key": "cancel", "value": "取消" }
+      ]
+    },
+    {
+      "id": "card_browse",
+      "entries": [
+        { "key": "upgrade", "value": "升级" },
+        { "key": "remove", "value": "移除" },
+        { "key": "skip", "value": "跳过" },
+        { "key": "select_upgrade", "value": "选择一张牌升级" },
+        { "key": "select_remove", "value": "选择一张牌移除" }
+      ]
+    },
+    {
+      "id": "map",
+      "entries": [
+        { "key": "boss", "value": "首领" },
+        { "key": "shop", "value": "商店" },
+        { "key": "campfire", "value": "篝火" },
+        { "key": "event", "value": "事件" },
+        { "key": "battle", "value": "战斗" },
+        { "key": "elite", "value": "精英" },
+        { "key": "enter", "value": "进入" },
+        { "key": "layer_complete", "value": "清除了本层所有敌人" }
+      ]
+    },
+    {
+      "id": "reward",
+      "entries": [
+        { "key": "card_reward", "value": "选择一张卡牌加入牌组" },
+        { "key": "gold_reward", "value": "获得金币" },
+        { "key": "relic_reward", "value": "获得遗物" },
+        { "key": "skip", "value": "跳过" }
+      ]
+    },
+    {
+      "id": "shop",
+      "entries": [
+        { "key": "buy", "value": "购买" },
+        { "key": "remove_card", "value": "移除一张牌" },
+        { "key": "remove_cost", "value": "移除费用" },
+        { "key": "insufficient_gold", "value": "金币不足" },
+        { "key": "leave", "value": "离开" }
+      ]
+    },
+    {
+      "id": "campfire",
+      "entries": [
+        { "key": "rest", "value": "休息" },
+        { "key": "rest_desc", "value": "回复 30% 最大生命值" },
+        { "key": "upgrade", "value": "锻造" },
+        { "key": "upgrade_desc", "value": "选择一张牌永久升级" },
+        { "key": "leave", "value": "离开" }
+      ]
+    },
+    {
+      "id": "game_over",
+      "entries": [
+        { "key": "victory_title", "value": "胜利" },
+        { "key": "defeat_title", "value": "旅途结束" },
+        { "key": "stats_header", "value": "本局数据" },
+        { "key": "floors_climbed", "value": "到达层数" },
+        { "key": "enemies_defeated", "value": "击败敌人" },
+        { "key": "damage_dealt", "value": "造成伤害" },
+        { "key": "cards_played", "value": "打出卡牌" },
+        { "key": "return_menu", "value": "返回主菜单" }
+      ]
+    },
+    {
+      "id": "status_tooltip",
+      "entries": [
+        { "key": "freeze", "value": "冻结" },
+        { "key": "freeze_desc", "value": "每层使目标的下一次攻击伤害 -1。每回合衰减 1 层。" },
+        { "key": "burn", "value": "燃烧" },
+        { "key": "burn_desc", "value": "回合结束时受到等量伤害。每回合衰减 1 层。" },
+        { "key": "weak", "value": "虚弱" },
+        { "key": "weak_desc", "value": "造成的攻击伤害 -25%。每回合衰减 1 层。" },
+        { "key": "vulnerable", "value": "易伤" },
+        { "key": "vulnerable_desc", "value": "受到的攻击伤害 +25%。每回合衰减 1 层。" },
+        { "key": "block", "value": "格挡" },
+        { "key": "block_desc", "value": "吸收等量伤害。回合开始时清空。" }
+      ]
+    }
+  ]
+}

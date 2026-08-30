@@ -1,0 +1,40 @@
+{
+  "events": [
+    {
+      "id": "event_wounded_01",
+      "title": "路边的伤者",
+      "description": "一个旅行者倒在路边，腿上有一道结冰的伤口。他看见了你，用虚弱的声音求救。",
+      "isRepeatable": false,
+      "choices": [
+        {
+          "text": "用自己的药草帮他处理伤口",
+          "tag": "救助",
+          "resultText": "你包扎了他的伤口。他千恩万谢，说自己会记住这份恩情。",
+          "rewards": [
+            {
+              "type": "Heal",
+              "value": 20
+            }
+          ]
+        },
+        {
+          "text": "搜走他的钱袋离开",
+          "tag": "冷漠",
+          "resultText": "你拿走了钱袋，把他留在原地。转身时你被他的眼神刺了一下。",
+          "rewards": [
+            {
+              "type": "Gold",
+              "value": 30
+            }
+          ],
+          "penalties": [
+            {
+              "type": "LoseHp",
+              "value": 5
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

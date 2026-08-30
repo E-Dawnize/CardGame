@@ -1,0 +1,38 @@
+{
+  "relics": [
+    {
+      "id": "relic_ice_01",
+      "name": "永冻核心",
+      "rarity": "Boss",
+      "cardClass": "ice",
+      "effects": [
+        {
+          "trigger": "OnDamageDealt",
+          "target": "SelectedEnemy",
+          "action": "ApplyStatus",
+          "value": 1,
+          "statusType": "Freeze"
+        }
+      ],
+      "description": "你造成的伤害额外施加 1 层冻结",
+      "flavorText": "核心还在跳动",
+      "keywords": ["ice"]
+    },
+    {
+      "id": "relic_ice_02",
+      "name": "霜甲",
+      "rarity": "Uncommon",
+      "cardClass": "ice",
+      "effects": [
+        {
+          "trigger": "OnTurnStart",
+          "target": "Self",
+          "action": "GainBlock",
+          "value": 4
+        }
+      ],
+      "description": "回合开始时获得 4 点格挡",
+      "keywords": ["ice"]
+    }
+  ]
+}

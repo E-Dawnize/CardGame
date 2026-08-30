@@ -1,0 +1,55 @@
+{
+  "title": "永冻之心",
+  "tagline": "当世界开始结冰，火焰是最后的勇气。",
+  "premise": "一场没有尽头的暴风雪吞噬了王国。人们说，只要找到碎裂的永冻核心，寒冬就会结束。你踏上了通往冰原深处的路。",
+  "playerConcept": "一个带着神秘碎片的旅行者，用火焰与寒冰铸成的卡牌战斗。",
+  "goal": "深入冰原，重铸永冻核心，终结寒冬。",
+  "layers": [
+    {
+      "index": 1,
+      "name": "冰封废墟",
+      "description": "被冰雪掩埋的旧城，霜牙猎犬在断壁间游荡。",
+      "nodeCount": 15,
+      "nodeDistribution": {
+        "battleCount": 7,
+        "eliteCount": 2,
+        "shopCount": 1,
+        "campfireCount": 2,
+        "eventCount": 3,
+        "randomPoolId": "pool_act1"
+      },
+      "bossId": "enemy_wolf_01",
+      "musicKey": "bgm_ice_ruins"
+    }
+  ],
+  "factions": [
+    {
+      "id": "frost_cult",
+      "name": "霜印教团",
+      "description": "崇拜永冻核心的古老教团，在冰原深处活动。",
+      "relations": []
+    }
+  ],
+  "speakers": [
+    {
+      "id": "player",
+      "name": "冒险者",
+      "description": "带着神秘碎片的旅行者。",
+      "faction": ""
+    },
+    {
+      "id": "elder_chen",
+      "name": "陈长老",
+      "title": "霜印教团大祭司",
+      "description": "右眼灰白的老人，知道碎片的秘密。",
+      "faction": "frost_cult",
+      "personalityTags": ["严肃", "秘密"],
+      "firstMetIn": "冰封废墟"
+    },
+    {
+      "id": "narrator",
+      "name": "旁白",
+      "faction": ""
+    }
+  ]
+}

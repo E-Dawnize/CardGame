@@ -1,0 +1,123 @@
+{
+  "dialogues": [
+    {
+      "id": "dialogue_tavern_01",
+      "title": "酒馆闲聊",
+      "lines": [
+        {
+          "speakerId": "elder_chen",
+          "portrait": "Center",
+          "emotion": "neutral",
+          "text": "冒险者。你身上有“那个东西”的气味。",
+          "type": "Normal",
+          "nextLineIndex": 1
+        },
+        {
+          "speakerId": "narrator",
+          "portrait": "Off",
+          "text": "老人放下酒杯。他的右眼是灰白色的，看不见东西，但左眼盯着你。",
+          "type": "Narration",
+          "nextLineIndex": 2
+        },
+        {
+          "speakerId": "player",
+          "portrait": "Left",
+          "emotion": "neutral",
+          "text": "我不懂你在说什么。",
+          "type": "Normal",
+          "nextLineIndex": 3
+        },
+        {
+          "speakerId": "elder_chen",
+          "portrait": "Center",
+          "emotion": "narrow_eyes",
+          "text": "你当然不懂。但你背包里的碎片知道。",
+          "type": "Choice",
+          "choices": [
+            {
+              "text": "离我远点。",
+              "tag": "强硬",
+              "nextLineIndex": 4,
+              "onSelectEffects": [
+                {
+                  "trigger": "OnPlay",
+                  "target": "Self",
+                  "action": "GainGold",
+                  "value": 20
+                }
+              ]
+            },
+            {
+              "text": "你说的碎片是什么？",
+              "tag": "试探",
+              "nextLineIndex": 5
+            },
+            {
+              "text": "（不说话，盯着老人）",
+              "tag": "沉默",
+              "nextLineIndex": 6
+            }
+          ]
+        },
+        {
+          "speakerId": "elder_chen",
+          "portrait": "Center",
+          "emotion": "sigh",
+          "text": "如你所愿。",
+          "type": "Normal",
+          "nextLineIndex": 7
+        },
+        {
+          "speakerId": "elder_chen",
+          "portrait": "Center",
+          "emotion": "slight_smile",
+          "text": "冰霜碎片。永冻核心的遗物。你手里那个，是第三块。也是最后一块。",
+          "type": "Normal",
+          "nextLineIndex": 8
+        },
+        {
+          "speakerId": "elder_chen",
+          "portrait": "Center",
+          "emotion": "neutral",
+          "text": "不说话的人有两种。一种是什么都不知道，一种是什么都知道但不敢说。你是哪一种？",
+          "type": "Choice",
+          "choices": [
+            {
+              "text": "第一种。",
+              "tag": "诚实",
+              "nextLineIndex": 5
+            },
+            {
+              "text": "关你什么事。",
+              "tag": "撒谎",
+              "nextLineIndex": 4
+            }
+          ]
+        },
+        {
+          "speakerId": "narrator",
+          "portrait": "Off",
+          "text": "老人起身离开。你注意到他坐过的椅子下面压着一张泛黄的纸条。",
+          "type": "Narration",
+          "nextLineIndex": -1
+        },
+        {
+          "speakerId": "player",
+          "portrait": "Left",
+          "emotion": "surprised",
+          "text": "你怎么知道——",
+          "type": "Normal",
+          "nextLineIndex": 9
+        },
+        {
+          "speakerId": "elder_chen",
+          "portrait": "Center",
+          "emotion": "neutral",
+          "text": "因为我曾经是它的主人。",
+          "type": "Normal",
+          "nextLineIndex": -1
+        }
+      ]
+    }
+  ]
+}

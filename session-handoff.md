@@ -2,30 +2,31 @@
 
 ## 当前状态
 
-- `feat-003 Assembly Definition Boundaries` 处于 `in-progress`，形态已按 2026-08-30 定案重塑（`feature_list.json` 已同步）。
-- Events 已迁入编译域（`257cd4c`）；MVVM 已退役（`docs/design/04-mvvm.md` 🚫）；Lifecycle/Boot 简化待拍板。
-- 设计定案与候选集中记录于 `docs/design/09-ui-resources.md`（UI 全 UITK + PrimeTween、资源 Addressables、数据 Excel → JSON、MVVM 评估、开放问题表）。
+- `feat-006 CardGame Data Foundation` 处于 `in-progress`：代码/样例/测试/文档全部写完，**Unity 编译验证待跑**。
+- `feat-003` 转 `blocked`（等 09 开放问题 #8：Lifecycle/Boot 简化拍板）。
 
 ## 已完成内容（2026-08-30 会话）
 
-- 创建 `09-ui-resources.md`：UI/资源/数据管线方案对比、MVVM 必要性评估（定案 B）、性能专项、参考资料、连带建议与开放问题表。
-- `04-mvvm.md` 退役存档；`07-cardgame.md` 与 `docs/design/README.md` 同步数据管线与退役状态；`feature_list.json` feat-003 重塑。
-- 协作模型定案记录：外部协作者只碰配置表/文案，代码单人；数据管线以"协作者无需 Unity"为约束。
+- 两个新程序集：`CardGame.Domain`（纯 C#，配置表数据模型 + 映射 + 校验 + 文案生成 + Id 索引仓库）与 `CardGame.Runtime`（JsonUtility 加载管线 + GameDataCatalog）。
+- 8 个样例 JSON（`Assets/CardGame/Content/Data/`）与 7 个 EditMode 测试文件（`Assets/CardGame/Tests/EditMode/Data/`）。
+- 文档：CONTRACT.md 协议落地节、07/09/design-README 同步、feature_list feat-006 新增。
 
 ## 最新验证证据
 
 | 检查 | 结果 |
 |---|---|
-| 本轮便携 Harness | 未运行（环境无 Node：`node: command not found`） |
-| 历史基线（2026-08-19） | 25 passed、0 failure、1 warning |
+| Unity batchmode EditMode | 未运行：编辑器占用项目锁（"another Unity instance is running"） |
+| 便携 Harness | 未运行：本机无 Node |
+| git diff --check | 干净 |
 
 ## 已知限制
 
-- 本轮文档改动未提交（含未跟踪的 `docs/design/` 整目录）。
-- IL2CPP/AOT 未验证；玩法本体未实现。
+- 新资产 .meta 未生成（等编辑器导入后提交）。
+- 编译错误风险集中点：DtoMapper/Types 的 C# 9 写法、测试 asmdef 引用。
 
 ## 下一可执行步
 
-1. 在装有 Node 的环境运行 `node scripts/harness/verify.mjs` 重建基线（检查 feature_list/文档一致性）。
-2. 打开 `docs/design/09-ui-resources.md` 文末开放问题表，拍板 #1（战斗层 spike 立项）与 #8（Boot/Lifecycle 简化）。
-3. 确认后：同步改写 03-lifecycle.md / 05-boot.md，提交全部文档改动。
+1. 让 Unity 编辑器刷新导入（切回编辑器窗口即可），看 Console 编译是否干净；用 Test Runner 跑 `CardGame.Tests.EditMode`（重点 Data/ 目录下 7 个文件）。
+2. 若编辑器不便关闭，关闭后跑：
+   `"C:\Program Files\Unity\Hub\Editor\6000.3.10f1\Editor\Unity.exe" -batchmode -nographics -projectPath "d:\Unity Project\CardGame" -runTests -testPlatform EditMode -testResults EditModeResults.xml -logFile -`
+3. 全绿后提交生成的 .meta + EditModeResults.xml 证据，关闭 feat-006。

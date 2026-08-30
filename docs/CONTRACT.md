@@ -59,6 +59,8 @@
 +--------------+---------------------------------+-----------------------------------+
 | Description  | string（自动生成）              | 程序拼接，策划不填                  |
 +--------------+---------------------------------+-----------------------------------+
+
+> **JSON 键名（2026-08-30）：** `Class` 字段在 JSON 中写为 `cardClass`（规避 C# 关键字冲突）；Excel 列名保持 `Class`。`Description` 不进 JSON（运行时自动生成）。
 ```
 
 ### Description 自动生成规则
@@ -186,6 +188,8 @@
 +--------------+---------------------------------+-----------------------------------+
 | FlavorText   | string                          | 风味文字，斜体，可空                |
 +--------------+---------------------------------+-----------------------------------+
+
+> **JSON 键名（2026-08-30）：** `Class` 写为 `cardClass`，同卡牌。
 | Keywords     | List<string>                    | "ice" "power"                     |
 +--------------+---------------------------------+-----------------------------------+
 ```
@@ -635,6 +639,10 @@
 - 程序在游戏启动时加载到内存，MVVM ViewModel 通过键读取
 - 如果后面做多语言，每个语言一个 JSON 文件：`ui-strings.zh-CN.json` / `ui-strings.en.json`
 
+> **JSON 形状（2026-08-30）：** 运行时协议为拍平形状
+> `{ "groups": [ { "id": "battle", "entries": [ { "key": "end_turn", "value": "结束回合" } ] } ] }`
+> （Unity JsonUtility 无法反序列化嵌套对象字典）。示例见 `Assets/CardGame/Content/Data/ui-strings.json`。
+
 ---
 
 ## 十一、对话剧本格式（Markdown）
@@ -892,3 +900,51 @@ project-root/
 | `Assets/Scripts/Editor/` | 程序 | 按需 |
 | `Assets/Plugins/RazorFramework/` | 程序 | 低频 |
 | `CLAUDE.md` | 两人都可以 | 低频 |
+
+---
+
+## 十四、协议落地（2026-08-30）
+
+`Assets/CardGame/Content/Data/*.json` 是可执行的 schema；本文件的字段契约仍是唯一权威，两者冲突以本文件为准并修 JSON/代码。
+
+```text
+├─ 枚举以字符串存储（大小写敏感，与 C# 枚举名一致，如 "DealDamage"/"OnPlay"）
+├─ 自动生成字段不进 JSON：CardDef.Description / EffectEntry.Description /
+│   EnemyIntent.PreviewText（运行时由 DescriptionBuilder 生成）
+├─ narrator / player 是普通 SpeakerDef（world.json speakers 中定义，faction 可为空）
+├─ Block 是 StatusDef：status.json 必须包含，敌人 startingStatus 与效果 statusType 按同一规则解析
+├─ Id 格式：^(card|relic|enemy|event|dialogue)_[a-z]+_[0-9]{2,}$
+└─ 校验规则（重复 Id、交叉引用、费用 0-5、非 Attack 伤害为 0、非 Skill 格挡为 0、
+   对话索引越界等）由 ContentValidator 机器执行，错误聚合为完整报告
+```
+
+### 暂定文案模板（本文档未覆盖的动作/条件，2026-08-30 补）
+
+| 动作 | 模板 |
+|---|---|
+| ReduceStatusToZero | "{StatusType} 层数清零" |
+| ExhaustRandomCard | "消耗一张随机手牌" |
+| ReduceAllCostsInHand | "本回合手牌费用 -{Value}" |
+| RepeatLastCard | "重复打出上一张牌" |
+| GainGold | "获得 {Value} 金币" |
+| Lifesteal | "本次伤害回复等量生命" |
+| RetainCard | "保留手牌" |
+
+| 条件 | 模板 |
+|---|---|
+| HasStatus | "目标有{状态名}" |
+| HpBelow | "生命低于 {Param}" |
+| HpAbovePercent | "生命高于 {Param}%" |
+| HasRelic | "拥有遗物 {遗物名}" |
+| CardPlayedThisTurnCount | "本回合已打出 {Param} 张牌" |
+| EnemyCountAbove | "敌人数多于 {Param}" |
+| NoEnemies | "没有敌人" |
+| LastCardWas | "上一张牌是 {Param}" |
+| PlayerHpLostThisCombat | "本场战斗已损失 {Param} 点生命" |
+
+### 已知缺口（留给后续功能关闭）
+
+- MapLayerDef 无 Id；SpeakerDef.FirstMetIn 暂为自由文本（层名）。
+- EffectTarget 无"玩家"语义；敌人施加给玩家的效果在规则引擎功能前暂用约定。
+- DialogueChoice.OnSelectEffects 无法表达遗物奖励（EffectEntry 动作词汇无 GainRelic）。
+- 敌人意图 Condition 为字符串（"HP<50%"），尚未编译为 ConditionEntry。

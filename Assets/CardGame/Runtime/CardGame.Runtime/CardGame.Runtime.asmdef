@@ -1,0 +1,8 @@
+{
+  "name": "CardGame.Runtime",
+  "rootNamespace": "CardGame.Runtime",
+  "references": [
+    "CardGame.Domain"
+  ],
+  "autoReferenced": false
+}

@@ -1,0 +1,51 @@
+{
+  "enemies": [
+    {
+      "id": "enemy_wolf_01",
+      "name": "霜牙猎犬",
+      "maxHp": 40,
+      "intentPool": [
+        {
+          "type": "Attack",
+          "value": 8,
+          "count": 2,
+          "weight": 60,
+          "minRound": 1,
+          "cooldown": 0
+        },
+        {
+          "type": "Attack",
+          "value": 4,
+          "count": 1,
+          "effects": [
+            {
+              "trigger": "OnDamageDealt",
+              "target": "Self",
+              "action": "GainBlock",
+              "value": 3
+            }
+          ],
+          "weight": 25,
+          "minRound": 1,
+          "cooldown": 0
+        },
+        {
+          "type": "Defend",
+          "value": 8,
+          "count": 1,
+          "weight": 15,
+          "minRound": 1,
+          "cooldown": 1
+        }
+      ],
+      "startingStatus": [
+        {
+          "statusType": "Block",
+          "stacks": 10
+        }
+      ],
+      "keywords": ["beast", "ice"],
+      "flavorText": "它的獠牙上凝结着冰霜"
+    }
+  ]
+}

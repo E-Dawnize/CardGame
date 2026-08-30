@@ -1,0 +1,72 @@
+{
+  "cards": [
+    {
+      "id": "card_ice_01",
+      "name": "寒冰箭",
+      "cost": 1,
+      "type": "Attack",
+      "rarity": "Common",
+      "cardClass": "ice",
+      "damage": 6,
+      "block": 0,
+      "effects": [
+        {
+          "trigger": "OnPlay",
+          "target": "SelectedEnemy",
+          "action": "ApplyStatus",
+          "value": 2,
+          "statusType": "Freeze"
+        }
+      ],
+      "keywords": ["ice"],
+      "upgradeToId": "card_ice_02"
+    },
+    {
+      "id": "card_ice_02",
+      "name": "碎裂",
+      "cost": 2,
+      "type": "Attack",
+      "rarity": "Uncommon",
+      "cardClass": "ice",
+      "damage": 4,
+      "block": 0,
+      "effects": [
+        {
+          "trigger": "OnPlay",
+          "target": "SelectedEnemy",
+          "action": "DealDamage",
+          "value": 8,
+          "condition": {
+            "type": "HasStatus",
+            "param": "Freeze"
+          }
+        }
+      ],
+      "keywords": ["ice", "conditional"],
+      "flavorText": "碎了。"
+    },
+    {
+      "id": "card_fire_01",
+      "name": "灼热打击",
+      "cost": 2,
+      "type": "Attack",
+      "rarity": "Common",
+      "cardClass": "fire",
+      "damage": 9,
+      "block": 0,
+      "effects": [],
+      "keywords": ["fire"]
+    },
+    {
+      "id": "card_neutral_01",
+      "name": "防御",
+      "cost": 1,
+      "type": "Skill",
+      "rarity": "Common",
+      "damage": 0,
+      "block": 5,
+      "effects": [],
+      "keywords": ["basic"]
+    }
+  ]
+}
