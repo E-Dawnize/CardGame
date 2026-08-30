@@ -1,35 +1,34 @@
-﻿# 项目进度记录
+# 项目进度记录
 
 ## 当前状态
 
-**最后更新：** 2026-08-19 +08:00
-**当前功能：** feat-003 Assembly Definition Boundaries 进行中。
-**状态：** feat-002 已合并到 `main` 并推送；feat-003 的设计规格与实施计划已写入仓库。
+**最后更新：** 2026-08-30 +08:00
+**当前功能：** feat-003 Assembly Definition Boundaries 进行中（形态按 2026-08-30 定案重塑）。
+**状态：** Events 已迁入编译域（`257cd4c`）；MVVM 已定案退役；Lifecycle/Boot 简化与 CardGame.Runtime 建立待定案（09 开放问题 #8）；数据管线（Excel→JSON）与 Addressables 资源管线已定案、待开工。
 
-## 本次完成：feat-002 整合与 feat-003 设计
+## 本次完成：UI/资源/数据管线设计定案（2026-08-30）
 
-- 发现 `codex/di-v2` 已完整实现并验证 feat-002，但未合并到 `main`；`main` 状态文档相对该工作线滞后。
-- 以快进方式把 `codex/di-v2`（`9bf9e80`）合并到 `main`，清理 `.worktrees/di-v2` 与 `codex/di-v2` 分支，并推送到 `origin/main`。
-- 合并后在 `main` 重跑便携 Harness：`25 passed、0 failure、1 warning`（warning 仅为便携模式未启动 Unity）。
-- 读取 `docs/legacy-framework-audit.md` 与真实源码，确认根目录 `Events`、`Lifecycle`、`MVVM`、`Input`、`Boot` 大量引用已删除的 DI V1 API，feat-003 属于重写而非机械迁移。
-- 写出 `docs/superpowers/specs/2026-08-19-assembly-definition-boundaries-design.md` 与 `docs/superpowers/plans/2026-08-19-assembly-definition-boundaries.md`。
+- 创建 `docs/design/09-ui-resources.md`：UI 单一栈全 UITK + PrimeTween（战斗层 spike 先行、失败回退战斗层 uGUI）、资源 Addressables 分组 + 按屏预载、数据管线 Excel → JSON（Node 转换器进 Harness）、MVVM 必要性评估（定案 B：不建程序集）、性能专项、参考资料与开放问题表。
+- `docs/design/04-mvvm.md` 改标 🚫 退役存档；`docs/design/README.md` 索引/图例/feat-003 目标图同步；`docs/design/07-cardgame.md` 数据契约改为 JSON schema 表述；`feature_list.json` feat-003 的 description/doneCriteria 重塑。
+- 协作模型定案：人数很少，外部协作者只碰配置表与文案（Excel/Markdown/ui-strings.json），代码侧单人；协作设施只在数据管线保留（协作者无需 Unity 即可转换校验）。
+- 连带建议（待确认，09 开放问题 #8）：Boot 不建框架程序集（Installer 纯 C#，启动编排进 CardGame.Runtime）；Lifecycle 不迁两阶段引擎（最多 50 行 UpdateRunner 进 CardGame.Runtime）。
 
-## 验证证据（2026-08-19）
+## 验证证据
 
 | 检查 | 命令 | 实际结果 |
 |---|---|---|
-| 合并后便携 Harness | `node scripts/harness/verify.mjs` | 25 passed、0 failure、1 warning（未启动 Unity） |
-| 分支关系 | `git merge-base main codex/di-v2` | `01ade59`，即 `main`，可快进 |
-| 推送 | `git push origin main` | `01ade59..9bf9e80 main -> main` |
-
-Node 全量契约测试在本会话沙箱只读限制下无法完整重跑：`mkdtemp` 与 fixture 写入返回 `EPERM`。feat-002 历史证据为 45/45 通过；实际 Unity 完整验证待 feat-003 迁入后进行。
+| 便携 Harness（本轮） | `node scripts/harness/verify.mjs` | 未运行：本环境无 Node（`node: command not found`），不构成验证证据 |
+| 便携 Harness（历史基线） | 同命令，2026-08-19 | 25 passed、0 failure、1 warning（未启动 Unity） |
 
 ## 已知限制与后续边界
 
-- 旧框架模块与 DI V2 不兼容，需按规格重写后才能进入 Unity 编译范围。
+- 本轮文档改动未提交（`docs/design/` 整目录未跟踪）。
 - IL2CPP、托管代码剥离、AOT 与目标平台构建仍未验证。
 - 卡牌战斗、伤害结算、地图、叙事、存档、文案与数值均未实现。
 
 ## 下一步
 
-1. 按 `docs/superpowers/plans/2026-08-19-assembly-definition-boundaries.md` 执行 Task 1（激活 feat-003 并固定 asmdef 边界契约），随后 Task 2 迁移 Events。
+1. 在装有 Node 的环境重跑便携 Harness，随后按需跑完整 Unity 验证。
+2. 拍板 09 开放问题 #1（战斗层 spike 立项）与 #8（Boot/Lifecycle 简化）；确认后同步 03/05 模块文档。
+3. 立新功能点：Addressables 装包分组 + 数据管线（Node 转换器 + Harness 校验 + CONTRACT 同步）。
+4. 提交本轮全部文档改动。

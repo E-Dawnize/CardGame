@@ -1,32 +1,31 @@
-﻿# 会话交接
+# 会话交接
 
 ## 当前状态
 
-- `feat-002 Pure C# DI Boundary` 已完成并合并到 `main`（`9bf9e80`）、已推送；`codex/di-v2` 分支与工作树已清理。
-- 当前 `feat-003 Assembly Definition Boundaries` 处于 `in-progress`。
-- 设计规格：`docs/superpowers/specs/2026-08-19-assembly-definition-boundaries-design.md`
-- 实施计划：`docs/superpowers/plans/2026-08-19-assembly-definition-boundaries.md`
+- `feat-003 Assembly Definition Boundaries` 处于 `in-progress`，形态已按 2026-08-30 定案重塑（`feature_list.json` 已同步）。
+- Events 已迁入编译域（`257cd4c`）；MVVM 已退役（`docs/design/04-mvvm.md` 🚫）；Lifecycle/Boot 简化待拍板。
+- 设计定案与候选集中记录于 `docs/design/09-ui-resources.md`（UI 全 UITK + PrimeTween、资源 Addressables、数据 Excel → JSON、MVVM 评估、开放问题表）。
 
-## 已完成内容
+## 已完成内容（2026-08-30 会话）
 
-- DI V2 成为 CardGame 唯一 DI 实现，位于 `Assets/Plugins/RazorFramework/DI/` 与 `Assets/Plugins/RazorFramework/Unity/DI/`。
-- 识别根目录旧 `Events`、`Lifecycle`、`MVVM`、`Input`、`Boot` 引用已删除的 DI V1 API，feat-003 属于重写而非机械迁移。
-- 已写出 feat-003 依赖图、关键决策（Events 解耦 Lifecycle、Lifecycle 拆纯核心与 Unity runner、MVVM 构造注入、Installer 改接 ContainerBuilder、游戏代码外迁）与自底向上迁移顺序。
+- 创建 `09-ui-resources.md`：UI/资源/数据管线方案对比、MVVM 必要性评估（定案 B）、性能专项、参考资料、连带建议与开放问题表。
+- `04-mvvm.md` 退役存档；`07-cardgame.md` 与 `docs/design/README.md` 同步数据管线与退役状态；`feature_list.json` feat-003 重塑。
+- 协作模型定案记录：外部协作者只碰配置表/文案，代码单人；数据管线以"协作者无需 Unity"为约束。
 
-## 最新验证证据（2026-08-19）
+## 最新验证证据
 
 | 检查 | 结果 |
 |---|---|
-| 合并后 `node scripts/harness/verify.mjs` | 25 passed、0 failure、1 warning（未启动 Unity） |
-| `git push origin main` | `01ade59..9bf9e80 main -> main` |
-
-Node 全量契约测试受本会话沙箱只读限制（fixture 写入返回 EPERM）无法完整重跑。
+| 本轮便携 Harness | 未运行（环境无 Node：`node: command not found`） |
+| 历史基线（2026-08-19） | 25 passed、0 failure、1 warning |
 
 ## 已知限制
 
-- IL2CPP、托管代码剥离、AOT 与目标平台构建尚未验证。
-- 卡牌战斗、伤害结算、地图、叙事、存档、文案与数值均未实现。
+- 本轮文档改动未提交（含未跟踪的 `docs/design/` 整目录）。
+- IL2CPP/AOT 未验证；玩法本体未实现。
 
 ## 下一可执行步
 
-执行 `docs/superpowers/plans/2026-08-19-assembly-definition-boundaries.md` 的 Task 2：迁移 Events 为纯 C# 零依赖程序集。先写 Unity EditMode 失败测试，再创建 `RazorFramework.Events.asmdef` 与纯 C# 实现，删除根 `Events/` 旧源码并更新 Harness。
+1. 在装有 Node 的环境运行 `node scripts/harness/verify.mjs` 重建基线（检查 feature_list/文档一致性）。
+2. 打开 `docs/design/09-ui-resources.md` 文末开放问题表，拍板 #1（战斗层 spike 立项）与 #8（Boot/Lifecycle 简化）。
+3. 确认后：同步改写 03-lifecycle.md / 05-boot.md，提交全部文档改动。

@@ -34,11 +34,13 @@
     {
       "id": "feat-003",
       "name": "Assembly Definition Boundaries",
-      "description": "Add Unity Assembly Definition files that enforce the dependency directions documented in DESIGN-REVIEW.md.",
+      "description": "Reshape assembly boundaries per the 2026-08-30 decisions in docs/design/09-ui-resources.md: Events has an asmdef; MVVM is retired; Lifecycle/Boot follow the no-compatibility-baggage simplification; CardGame.Runtime is established and legacy root framework sources are removed.",
       "dependencies": ["feat-002"],
       "status": "in-progress",
       "doneCriteria": [
-        "Events, Lifecycle, MVVM, and Boot framework modules each have an Assembly Definition",
+        "Events has a pure C# Assembly Definition (done); MVVM is retired with legacy root MVVM/ removed",
+        "Lifecycle and Boot follow the 09-ui-resources.md simplification decision (no framework asmdefs; minimal UpdateRunner and boot orchestration live in CardGame.Runtime if needed)",
+        "CardGame.Runtime assembly is established with input and game boot details migrated from legacy root sources",
         "Unity compiles the dependency graph with pure C# modules free of UnityEngine references",
         "Legacy root Events/Lifecycle/MVVM/Input/Boot contain no C# in the Unity compilation scope",
         "Portable and full Harness verification pass with real Unity EditMode evidence",
