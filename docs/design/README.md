@@ -16,7 +16,8 @@
 ```text
 docs/design/
 ├─ README.md          总览：原则、依赖图、顶层结构、共享限制、维护规则（本文件）
-├─ 01-di.md           DI 核心 + Unity 注入适配器              ✅
+├─ 01-di.md           DI 核心 + Unity 注入适配器（设计摘要）          ✅
+├─ di-internals.md    DI 源码级详解（逐文件走读 + 时序 + 实操）        ✅
 ├─ 02-events.md       强类型事件总线                            ✅
 ├─ 03-lifecycle.md    生命周期引擎（已退役，历史存档）            🚫
 ├─ 04-mvvm.md         MVVM 与绑定（已退役，历史存档）            🚫

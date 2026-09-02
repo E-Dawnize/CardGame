@@ -71,6 +71,9 @@ flowchart TB
 
 **读完自检：** 一次 `Resolve` 背后发生什么？一次 `Dispose` 释放什么？为什么"Singleton 捕获局内状态"会被 `Build()` 拦住（而不是第 2 局游玩时才炸）？
 
+> **想要源码级详解**（每文件的字段/分支逐一讲解、Build → Resolve → Dispose 全程时序、captive 防护的
+> `DetermineRequiredScope` 递归算法、常见错误→修复对照表）→ [docs/design/di-internals.md](design/di-internals.md)。
+
 ## 第 4 站：适配层与测试（背书与预留接口）
 
 | 顺序 | 文件 | 看点 |
