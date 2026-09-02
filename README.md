@@ -72,7 +72,7 @@ export UNITY_EDITOR='/path/to/Unity'
 node scripts/harness/verify.mjs --full
 ```
 
-完整模式默认把当前仓库作为 Unity 项目路径，`UNITY_EDITOR` 是唯一必需的环境变量。只有在验证另一个兼容宿主时，才设置可选的 `RAZOR_UNITY_PROJECT`。详细工作流见 [Harness 维护指南](docs/HARNESS.md)。旧框架迁移的历史风险保存在 [旧 RazorFramework 历史审计](docs/legacy-framework-audit.md)，需在 feat-003 重新核对。开始实质工作前，请阅读 [AGENTS.md](AGENTS.md)、`feature_list.json`、`progress.md` 与 `session-handoff.md`。架构以 [设计文档](docs/design/README.md) 为权威参考，边界变更必须同步更新对应模块文档。
+完整模式默认把当前仓库作为 Unity 项目路径，`UNITY_EDITOR` 是唯一必需的环境变量。只有在验证另一个兼容宿主时，才设置可选的 `RAZOR_UNITY_PROJECT`。详细工作流见 [Harness 维护指南](docs/HARNESS.md)。旧框架迁移的历史风险保存在 [旧 RazorFramework 历史审计](docs/legacy-framework-audit.md)，需在 feat-003 重新核对。开始实质工作前，请阅读 [AGENTS.md](AGENTS.md)、`feature_list.json`、`progress.md` 与 `session-handoff.md`。架构以 [设计文档](docs/design/README.md) 为权威参考，边界变更必须同步更新对应模块文档。想按代码依赖顺序读懂源码逻辑，见 [代码阅读顺序](docs/code-reading-order.md)。
 
 ## 版本控制边界
 

@@ -97,6 +97,7 @@ CardGame/
 | AGENTS.md | 协作工作流（开始前必读清单） | 流程视角 |
 | DESIGN-REVIEW.md | 架构审查结论与已知限制 | 审查快照，结论应收敛进本目录 |
 | docs/CONTRACT.md | 游戏数据契约（策划/程序接口） | 数据层契约，见 07-cardgame.md |
+| docs/code-reading-order.md | 源码阅读导航（按数据流/依赖方向） | 结构变更时同步，见其「更新准则」 |
 | docs/HARNESS.md | 验证流程维护指南 | 验证操作细节，见 08-verification.md |
 | docs/legacy-framework-audit.md | 旧框架历史风险快照（feat-003 重构输入） | 历史记录，迁移完成后归档 |
 | docs/superpowers/specs/、plans/ | 各功能的临时设计规格与实施计划 | 一次性产物；落地后结论吸收进本目录 |
