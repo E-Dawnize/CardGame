@@ -5,7 +5,7 @@
 > **与状态文档分工：** 本目录回答"设计是什么"；`progress.md`、`session-handoff.md`、`feature_list.json` 回答"进展到哪"。
 > 每个功能的 spec/plan 落地后，其架构结论必须吸收进对应模块文件。
 >
-> **最后更新：** 2026-08-30 · 当前功能：feat-003 in-progress（Events 已迁移；MVVM 已退役；
+> **最后更新：** 2026-08-30 · 当前功能：feat-003 in-progress（Events 已迁移；MVVM 已退役且旧源码已删除；
 > Lifecycle/Boot 简化待定案；Input 迁 CardGame.Runtime）
 
 ## 文件索引
@@ -28,8 +28,8 @@ docs/design/
 
 ## 架构原则
 
-1. **纯 C# 核心 / Unity 适配分层** — 框架核心（DI、Events、Lifecycle、MVVM）不含 `UnityEngine` 编译引用，由 asmdef `noEngineReferences: true` 强制；Unity 行为收敛到 `Unity.*` 适配程序集。
-2. **单一依赖方向** — `DI → Events → Lifecycle → MVVM → Unity.* → Boot → CardGame.Runtime`；框架不引用游戏，游戏玩法规则不进入框架。
+1. **纯 C# 核心 / Unity 适配分层** — 框架核心（DI、Events、Lifecycle）不含 `UnityEngine` 编译引用，由 asmdef `noEngineReferences: true` 强制；Unity 行为收敛到 `Unity.*` 适配程序集。
+2. **单一依赖方向** — `DI → Events → Lifecycle → Unity.* → Boot → CardGame.Runtime`；框架不引用游戏，游戏玩法规则不进入框架。
 3. **构建期验证优先** — 依赖图、作用域树、生命周期穿透在容器构建期校验并失败，而非运行期。
 4. **机器验证边界** — Node Harness（便携 + 完整 Unity EditMode）递归拒绝越界代码，守住每一条边界。
 
@@ -47,7 +47,7 @@ Unity 编译域 — 现状
 ├─ CardGame.Runtime              ✅  [Unity, refs Domain]  autoReferenced: false  feat-006 新增
 └─ CardGame.Tests.EditMode       ✅  [refs Domain, Runtime]  Editor only（项目身份 + 数据协议）
 
-feat-003 目标 — 剩余（2026-08-30 更新：MVVM 两程序集退役；Lifecycle/Boot 简化建议见 09-ui-resources.md，待定案）
+feat-003 目标 — 剩余（2026-08-30 更新：MVVM 两程序集退役且旧源码已删除；Lifecycle/Boot 简化建议见 09-ui-resources.md，待定案）
 ├─ RazorFramework.Lifecycle            ⏳  纯 C#：生命周期接口 + LifecycleEngine
 ├─ RazorFramework.Unity.Lifecycle      ⏳  [Unity, refs DI/Lifecycle/Unity.DI]  StrictLifecycleMonoBehaviour + UpdateRunner
 ├─ RazorFramework.Unity.Boot           ⏳  [Unity, refs 全部框架]  Installer + ProjectContext + SceneScopeRunner
@@ -58,7 +58,7 @@ feat-003 目标 — 剩余（2026-08-30 更新：MVVM 两程序集退役；Lifec
 
 - 纯 C# asmdef：`noEngineReferences: true`，`references` 只指向更底层的纯 C# asmdef。
 - Unity asmdef 只被 Unity 层与 CardGame 引用；框架永不引用 CardGame。
-- 根目录 `Boot/`、`Lifecycle/`、`MVVM/`、`Input/` 下的任何 C# 被 Harness 递归拒绝进入 Unity 编译（根 `Events/` 已删除）。
+- 根目录 `Boot/`、`Lifecycle/`、`Input/` 下的任何 C# 被 Harness 递归拒绝进入 Unity 编译（根 `Events/`、`MVVM/` 已删除）。
 - 测试程序集 `includePlatforms: [Editor]`、`autoReferenced: false`。
 
 ## 仓库顶层结构
@@ -68,7 +68,7 @@ CardGame/
 ├─ Assets/                          ← Unity 编译域（唯一）
 │  ├─ CardGame/                     游戏资产：Scenes/、Settings/、Tests/
 │  └─ Plugins/RazorFramework/       框架：DI/、Events/、Unity/DI/、Tests/
-├─ Boot/  Lifecycle/  MVVM/  Input/ 旧框架源码（非编译域，feat-003 迁移输入）
+├─ Boot/  Lifecycle/  Input/ 旧框架源码（非编译域，feat-003 迁移输入）
 ├─ docs/                            本目录 + CONTRACT + HARNESS + superpowers/
 ├─ scripts/harness/                 可重复验证
 ├─ AGENTS.md                        协作工作流（开始工作前必读）
@@ -84,7 +84,7 @@ CardGame/
 
 1. **IL2CPP / 托管代码剥离 / AOT 未验证** — Unity 注入依赖反射；目标平台发布前需 `link.xml`/保留策略与平台构建验证，或改为生成式注入。
 2. **Unity 注入器不是主线程调度器** — 依赖 Unity 初始化流程捕获主线程，任何非主线程接触 fail-closed。
-3. **feat-003 剩余模块属重写** — 旧 Boot/Lifecycle/MVVM/Input 引用已删除的 DI V1 API，不能机械迁移；迁移顺序自底向上：Lifecycle → MVVM → Boot → Input。
+3. **feat-003 剩余模块属重写** — 旧 Boot/Lifecycle/Input 引用已删除的 DI V1 API，不能机械迁移；迁移顺序自底向上：Lifecycle → Boot → Input。
 4. **场景运行时流程未验证** — 当前证据仅覆盖 Editor 编译与 EditMode 行为，不证明玩法运行时、输入、存档、网络。
 5. **Input 层为占位** — `PlayerInput.cs` 是 InputSystem 生成类占位，需用真实 `.inputactions` 生成版本替换后才可用。
 

@@ -3,11 +3,43 @@
 > **状态：🚫 已退役（2026-08-30）** —— 框架级 MVVM 不实施；本文件转为历史存档
 > 退役评估见 [09-ui-resources.md](09-ui-resources.md)「MVVM 必要性评估」：
 > UITK 官方 runtime binding 替代自研绑定；战斗层走代码视图；个人项目无框架复用包袱
-> 处置：根目录旧 `MVVM/` 源码不入编译域、随迁移清理删除；`RazorFramework.MVVM` 与
+> 处置：根目录旧 `MVVM/` 源码已于 2026-09-02 删除；`RazorFramework.MVVM` 与
 > `RazorFramework.Unity.MVVM` 程序集不再建立；面板层数据源所需的 INPC 基类
-> （约 30 行，SetProperty 值变才通知）按需写入 CardGame.Runtime
+> （约 30 行，SetProperty 值变才通知）按需写入 CardGame.Runtime（见下方「保留模式」）
 >
 > 以下为退役前的历史内容（旧实现与已废弃目标形态），仅存档不再维护。
+
+## 保留模式：INPC 基类（留待后续按需使用）
+
+旧 `ViewModelBase.SetProperty` 是唯一值得复用的模式（值变才通知，约 30 行）。
+根目录源码已随退役删除，此模式**留待后续按需使用**：当面板/UI 层需要数据源变更通知时，
+在 `CardGame.Runtime` 内按需新建一个干净基类——去掉 `[Inject]` 字段注入、EventCenter
+引用与命名 Command 注册表，核心形态如下：
+
+```csharp
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Runtime.CompilerServices;
+
+public abstract class ObservableObject : INotifyPropertyChanged
+{
+    public event PropertyChangedEventHandler PropertyChanged;
+
+    protected void OnPropertyChanged([CallerMemberName] string propertyName = "")
+        => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+
+    protected bool SetProperty<T>(ref T field, T value, [CallerMemberName] string propertyName = "")
+    {
+        if (EqualityComparer<T>.Default.Equals(field, value)) return false;
+        field = value;
+        OnPropertyChanged(propertyName);
+        return true;
+    }
+}
+```
+
+- 不建 `RazorFramework.MVVM` 程序集；Commands/Binding 不迁移（已被 UITK runtime binding 与战斗层代码视图替代）。
+- 需要 `INotifyPropertyChanged` 时按上面形态在 `CardGame.Runtime` 内实现，不要回头恢复旧源码。
 
 ## 旧实现（迁移输入）
 

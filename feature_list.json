@@ -38,7 +38,7 @@
       "dependencies": ["feat-002"],
       "status": "blocked",
       "doneCriteria": [
-        "Events has a pure C# Assembly Definition (done); MVVM is retired with legacy root MVVM/ removed",
+        "Events has a pure C# Assembly Definition (done); MVVM is retired with legacy root MVVM/ removed (done)",
         "Lifecycle and Boot follow the 09-ui-resources.md simplification decision (no framework asmdefs; minimal UpdateRunner and boot orchestration live in CardGame.Runtime if needed)",
         "CardGame.Runtime assembly is established with input and game boot details migrated from legacy root sources",
         "Unity compiles the dependency graph with pure C# modules free of UnityEngine references",
@@ -81,7 +81,7 @@
       "name": "CardGame Data Foundation",
       "description": "Pin the Excel/Markdown JSON protocol: pure C# CardGame.Domain data model, id-indexed repository, structured validation, runtime card/intent description generation, and Unity-side JsonUtility loading of committed sample content under Assets/CardGame/Content/Data.",
       "dependencies": ["feat-005"],
-      "status": "in-progress",
+      "status": "done",
       "doneCriteria": [
         "CardGame.Domain asmdef is pure C# (noEngineReferences true, no references) and CardGame.Runtime references only CardGame.Domain",
         "JSON protocol is pinned: string enums, cardClass rename for the C# keyword conflict, flat ui-strings groups/entries shape, one root wrapper per category file",
@@ -92,7 +92,7 @@
         "EditMode tests cover enum mapping, DTO mapping, JsonUtility roundtrip, validation rules, description generation, loading, and committed sample content",
         "docs/design 07/09, CONTRACT.md protocol notes, README assembly graph, progress.md, and session-handoff.md are synced"
       ],
-      "evidence": ""
+      "evidence": "2026-09-02: Unity batchmode EditMode passed 112/112 (fresh XML total=112 passed=112 failed=0) after three root-cause fixes (TextAsset name key normalization, phantom ConditionEntry from JsonUtility nested-class instantiation, JsonUtility default-semantics test assertions); full harness 29 checks 0 failures 0 warnings; portable harness (bun) 28 checks 0 failures; harness test suite 45/45; committed sample JSON loads and cross-references clean."
     }
   ]
 }

@@ -415,7 +415,6 @@ async function checkUnityProjectHost() {
 async function checkCSharpBoundaries() {
   const modules = new Map([
     ["Lifecycle", "RazorFramework.Lifecycle"],
-    ["MVVM", "RazorFramework.MVVM"],
     ["Input", "RazorFramework.Input"],
     ["Boot", "RazorFramework.Boot"]
   ]);
@@ -443,20 +442,29 @@ async function checkCSharpBoundaries() {
       if (!namespacePattern.test(code)) {
         fail(relative + " is outside namespace " + namespaceName);
       }
-
-      const importsUnity = /^\s*using\s+UnityEngine(?:\.|;)/m.test(code);
-      const qualifiedUnity = /\bUnityEngine\.[A-Za-z_]\w*/.test(code);
-      const pureMvvm =
-        relative.startsWith("MVVM/Commands/") ||
-        relative.startsWith("MVVM/ViewModel/");
-      if (pureMvvm && (importsUnity || qualifiedUnity)) {
-        fail(relative + " violates the pure-C# MVVM boundary");
-      }
     }
   }
 
   if (count > 0) {
     pass("C# module boundaries checked (" + count + " files)");
+  }
+}
+
+async function checkLegacyRootMvvmAbsent() {
+  let legacyFiles = [];
+  try {
+    legacyFiles = await walk(path.join(ROOT, "MVVM"), ".cs");
+  } catch (error) {
+    if (error.code !== "ENOENT") {
+      fail("Unable to inspect legacy root MVVM/: " + error.message);
+    }
+  }
+  for (const file of legacyFiles) {
+    const relative = path.relative(ROOT, file).replaceAll("\\", "/");
+    fail("Legacy root MVVM source must be absent: " + relative);
+  }
+  if (legacyFiles.length === 0) {
+    pass("Legacy root MVVM implementation is absent");
   }
 }
 
@@ -837,6 +845,7 @@ async function main() {
   await checkPureCSharpDiBoundary();
   await checkPureCSharpEventsBoundary();
   await checkCSharpBoundaries();
+  await checkLegacyRootMvvmAbsent();
   checkGitDiff();
 
   if (FULL) {

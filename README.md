@@ -11,7 +11,7 @@ CardGame 是一个基于 Unity 的叙事肉鸽卡牌项目。它以分支地图�
 | `Assets/Plugins/RazorFramework/Unity/DI/` | Unity 对象成员注入适配器 | 只能依赖 DI 核心和 Unity；不把 Unity 规则倒灌进核心 |
 | `Assets/Plugins/RazorFramework/Tests/EditMode/` | DI V2 与 Unity 适配器的 EditMode 测试 | 新行为先由测试表达，再修改实现 |
 | `Packages/`、`ProjectSettings/` | Unity 版本、包版本、项目身份与构建场景 | 改动后必须运行 Harness；不记录本机临时路径 |
-| 根目录 `Boot/`、`Events/`、`Input/`、`Lifecycle/`、`MVVM/` | 尚未迁入的旧 RazorFramework 源码 | 不进入当前 Unity 编译范围，也不添加 CardGame 玩法代码 |
+| 根目录 `Boot/`、`Input/`、`Lifecycle/` | 尚未迁入的旧 RazorFramework 源码 | 不进入当前 Unity 编译范围，也不添加 CardGame 玩法代码 |
 | `scripts/harness/` 与状态文档 | 可重复验证、功能状态和协作交接 | 结构契约变更必须同时更新测试与说明 |
 
 ## DI V2 使用方式

@@ -13,7 +13,7 @@
 
 - CardGame 已有 Unity `6000.3.10f1` 项目宿主，旧文中的“缺少 Unity 宿主”已不成立；
 - feat-002 已用 `Assets/Plugins/RazorFramework/DI/` 的 DI V2 替换旧根 DI，DI 结论以当前 `DESIGN-REVIEW.md` 为准；
-- 根目录 `Boot/`、`Events/`、`Input/`、`Lifecycle/`、`MVVM/` 仍是未迁入 Unity 编译范围的旧源码；
+- 根目录 `Boot/`、`Input/`、`Lifecycle/` 仍是未迁入 Unity 编译范围的旧源码；
 - 旧审计中“已在提取版本修复”的描述只代表历史动作，不能证明 CardGame 当前实现正确；
 - feat-003 必须重新检查真实源码、建立引用图并用 Unity 编译和测试验证。
 

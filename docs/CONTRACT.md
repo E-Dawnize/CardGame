@@ -636,7 +636,7 @@
 ```
 
 - 策划用 JSON 编辑器或任何文本编辑器修改
-- 程序在游戏启动时加载到内存，MVVM ViewModel 通过键读取
+- 程序在游戏启动时加载到内存，UI 层通过键读取
 - 如果后面做多语言，每个语言一个 JSON 文件：`ui-strings.zh-CN.json` / `ui-strings.en.json`
 
 > **JSON 形状（2026-08-30）：** 运行时协议为拍平形状
@@ -856,7 +856,6 @@ project-root/
 │   │       ├── DI/
 │   │       ├── Lifecycle/
 │   │       ├── Events/
-│   │       ├── MVVM/
 │   │       ├── Input/
 │   │       └── Boot/
 │   │
