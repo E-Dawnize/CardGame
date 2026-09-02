@@ -20,6 +20,28 @@ RazorFramework.Events/
    └─ Dispose 清空全部订阅
 ```
 
+*图示：发布/订阅的快照分发（图示辅助，细节以正文为准）*
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant A as 订阅者 A
+    participant B as 订阅者 B
+    participant P as 发布者
+    participant E as EventManager
+
+    A->>E: Subscribe(CardPlayedEvent, handlerA)
+    note over E: 全局锁内 Combine 入 Delegate 字典
+    B->>E: Subscribe(CardPlayedEvent, handlerB)
+    P->>E: Publish(evt)
+    E->>E: 锁内取当前委托快照，随后解锁
+    E->>A: 锁外调用 handlerA(evt)
+    E->>B: 锁外调用 handlerB(evt)
+    A->>E: Unsubscribe（发布进行中）
+    note over A,E: 不影响本次快照分发，下次 Publish 生效
+    note over E: 事件必须为 struct；无订阅时 Publish 安全不抛
+```
+
 ## 关键决策与不变量
 
 - **D1（已落地）**：`IEventCenter` 不再继承 `IInitializable`，与 Lifecycle 完全解耦；零框架依赖，BCL only。
