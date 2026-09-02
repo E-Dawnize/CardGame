@@ -30,9 +30,9 @@ DI V2 在 `Build()` 时冻结注册并验证依赖图；支持 Singleton、具�
 1. Unity 注入器不是主线程调度器。它依赖 Unity `SubsystemRegistration`/`BeforeSceneLoad` 初始化流程捕获主线程；未初始化、工作线程构造或工作线程调用都会 fail-closed。EditMode 的内部初始化钩子不属于生产 public API。
 2. Unity 注入仅覆盖字段和可写的非索引实例属性；静态、只读、常量、索引属性、无 setter 属性，以及同时标记必需和可选注入的成员都会失败。
 3. 反射注入已由 Unity `6000.3.10f1` 的 EditMode 覆盖，但 **IL2CPP、linker stripping 与 AOT 兼容性尚未证明**。在任何目标平台发布前，必须添加并审查 `link.xml`/保留策略、执行对应平台构建验证；若该维护成本不可接受，应采用生成式或显式注入替代反射。
-4. feat-003 尚未开始。`Boot`、`Events`、`Input`、`Lifecycle`、`MVVM` 仍在仓库根目录，未进入 Unity 编译范围；它们的程序集依赖边界需要按 [历史审计](docs/legacy-framework-audit.md) 的清单重新核对、单独设计与验证。
+4. feat-003 程序集边界重塑已按 2026-09-02 决策落地：根目录旧源码（DI/Events/MVVM/Lifecycle/Boot/Input）已全部删除，由 Harness 缺席检查守卫；框架只剩 DI / Events / Unity.DI，composition root（GameBootstrap/GameComposition）在 CardGame.Runtime，旧生命周期/启动编排不再以框架形式存在（决策见 docs/superpowers/specs/2026-09-02-lifecycle-boot-simplification-design.md）。
 5. 当前验证证明 Editor 编译和 EditMode 行为，不证明场景运行时流程、玩家输入、存档、网络或实际肉鸽玩法。
 
 ## 下一阶段审查重点
 
-feat-003 应先进行 brainstorming，确认其程序集拆分图、允许的依赖方向、测试程序集引用与迁移顺序，再创建实施计划。它不得以降低 DI 纯 C# 门禁为代价换取迁移便利。
+feat-003 剩余部分按 2026-09-02 决策执行：不再迁移旧 Lifecycle/Boot/Input，改删除旧源码 + CardGame.Runtime 按需实现；不得以降低 DI 纯 C# 门禁为代价换取迁移便利。

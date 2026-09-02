@@ -19,7 +19,9 @@
       "id": "feat-002",
       "name": "Pure C# DI Boundary",
       "description": "Replace the legacy DIContainer with a strict immutable DI v2 core under Assets/Plugins/RazorFramework, plus a Unity-only object injection adapter.",
-      "dependencies": ["feat-005"],
+      "dependencies": [
+        "feat-005"
+      ],
       "status": "done",
       "doneCriteria": [
         "RazorFramework.DI is immutable after build and has no compile-time UnityEngine reference",
@@ -34,25 +36,30 @@
     {
       "id": "feat-003",
       "name": "Assembly Definition Boundaries",
-      "description": "Reshape assembly boundaries per the 2026-08-30 decisions in docs/design/09-ui-resources.md: Events has an asmdef; MVVM is retired; Lifecycle/Boot follow the no-compatibility-baggage simplification; CardGame.Runtime is established and legacy root framework sources are removed.",
-      "dependencies": ["feat-002"],
-      "status": "blocked",
-      "doneCriteria": [
-        "Events has a pure C# Assembly Definition (done); MVVM is retired with legacy root MVVM/ removed (done)",
-        "Lifecycle and Boot follow the 09-ui-resources.md simplification decision (no framework asmdefs; minimal UpdateRunner and boot orchestration live in CardGame.Runtime if needed)",
-        "CardGame.Runtime assembly is established with input and game boot details migrated from legacy root sources",
-        "Unity compiles the dependency graph with pure C# modules free of UnityEngine references",
-        "Legacy root Events/Lifecycle/MVVM/Input/Boot contain no C# in the Unity compilation scope",
-        "Portable and full Harness verification pass with real Unity EditMode evidence",
-        "README, DESIGN-REVIEW, HARNESS, progress, and handoff describe the boundaries in Chinese"
+      "description": "Reshape assembly boundaries per the 2026-09-02 lifecycle-boot simplification decision: Events has an asmdef; MVVM, Lifecycle, Boot, and Input legacy sources are retired and removed; CardGame.Runtime is established as the composition root; the framework is reduced to DI/Events/Unity.DI.",
+      "dependencies": [
+        "feat-002"
       ],
-      "evidence": ""
+      "status": "done",
+      "doneCriteria": [
+        "Events has a pure C# Assembly Definition (done)",
+        "MVVM retired with legacy root removed (done)",
+        "Lifecycle/Boot/Input legacy sources removed with harness absence checks (done per the 2026-09-02 decision)",
+        "CardGame.Runtime is the composition root: GameBootstrap scene entry -> GameComposition (RunScope/EncounterScope defined, code-first registration) -> GameFlow explicit start; GameDataCatalog replaced by container resolution (done)",
+        "Bootstrap scene wired with the entry component bound to the committed sample data (done)",
+        "Unity compiles the dependency graph with pure C# modules free of UnityEngine references (done)",
+        "Portable and full Harness verification pass with real Unity EditMode evidence (done)",
+        "README, DESIGN-REVIEW, HARNESS, design docs 03/05/06/07, CONTRACT, AGENTS, progress, and handoff describe the 2026-09-02 boundaries in Chinese (done)"
+      ],
+      "evidence": "2026-09-02: per the lifecycle-boot simplification decision (docs/superpowers/specs/2026-09-02-lifecycle-boot-simplification-design.md), deleted legacy root Lifecycle/Boot/Input (16 files) and replaced the module boundary walk with harness absence checks; implemented the composition root in CardGame.Runtime (GameBootstrap -> GameComposition -> GameFlow with RunScope/EncounterScope, code-first registration); replaced GameDataCatalog with container resolution and wired the Bootstrap scene entry to the 8 committed sample JSON assets. Unity batchmode EditMode passed 116/116 (including 4 new GameCompositionTests); full harness 29 checks 0 warnings 0 failures; portable harness (bun) 28 checks 0 failures; harness test suite 45/45; git diff --check clean."
     },
     {
       "id": "feat-004",
       "name": "Unity Test Host",
       "description": "Create or document a repeatable consuming Unity project that compiles the framework and runs EditMode tests.",
-      "dependencies": ["feat-003"],
+      "dependencies": [
+        "feat-003"
+      ],
       "status": "not-started",
       "doneCriteria": [
         "A clean checkout can invoke the Unity test path",
@@ -65,7 +72,9 @@
       "id": "feat-005",
       "name": "CardGame Unity Project Host",
       "description": "Migrate the approved Unity 6000.3.10f1 project substrate into CardGame and establish a repeatable EditMode verification host without compiling the legacy framework.",
-      "dependencies": ["feat-001"],
+      "dependencies": [
+        "feat-001"
+      ],
       "status": "done",
       "doneCriteria": [
         "CardGame contains the approved Assets, Packages, and ProjectSettings roots without Unity-generated caches",
@@ -80,7 +89,9 @@
       "id": "feat-006",
       "name": "CardGame Data Foundation",
       "description": "Pin the Excel/Markdown JSON protocol: pure C# CardGame.Domain data model, id-indexed repository, structured validation, runtime card/intent description generation, and Unity-side JsonUtility loading of committed sample content under Assets/CardGame/Content/Data.",
-      "dependencies": ["feat-005"],
+      "dependencies": [
+        "feat-005"
+      ],
       "status": "done",
       "doneCriteria": [
         "CardGame.Domain asmdef is pure C# (noEngineReferences true, no references) and CardGame.Runtime references only CardGame.Domain",

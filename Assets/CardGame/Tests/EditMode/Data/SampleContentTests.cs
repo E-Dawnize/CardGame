@@ -23,17 +23,23 @@ namespace CardGame.Tests.EditMode
             "Assets/CardGame/Content/Data/ui-strings.json"
         };
 
-        private static DataRepository LoadSamples()
+        /// <summary>加载全部提交样例 TextAsset（供样例自证与组合根测试复用）。</summary>
+        internal static System.Collections.Generic.IReadOnlyList<UnityEngine.TextAsset> LoadSampleAssets()
         {
-            var assets = new List<TextAsset>();
+            var assets = new System.Collections.Generic.List<UnityEngine.TextAsset>();
             foreach (var path in SamplePaths)
             {
-                var asset = AssetDatabase.LoadAssetAtPath<TextAsset>(path);
+                var asset = AssetDatabase.LoadAssetAtPath<UnityEngine.TextAsset>(path);
                 Assert.That(asset, Is.Not.Null, $"样例文件缺失：{path}");
                 assets.Add(asset);
             }
+            return assets;
+        }
+
+        private static DataRepository LoadSamples()
+        {
             var loader = new GameDataLoader(new JsonUtilityGameDataSerializer());
-            return loader.Load(assets);
+            return loader.Load(LoadSampleAssets());
         }
 
         [Test]

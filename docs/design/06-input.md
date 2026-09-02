@@ -1,42 +1,16 @@
 # Input — 玩家输入
 
-> 旧实现：根目录 `Input/`（非编译域）
-> 目标位置：`Assets/CardGame/Runtime/Input/`（`CardGame.Runtime` 程序集）
-> 状态：⏳ 迁出中（feat-003 Task 5） · 属游戏专属代码，不属于框架
+> **状态：🚫 旧框架输入层已删除（2026-09-02）** —— 输入属游戏细节，归 `CardGame.Runtime`；本文件转为方向记录
+> 决策见 [2026-09-02 决策规格](../../superpowers/specs/2026-09-02-lifecycle-boot-simplification-design.md) 问题 7：
+> 根目录旧 `Input/` 抽象层（IPlayerInput / PlayerInput / PlayerInputManager）已删除——
+> 该抽象面向多设备/重映射的动作游戏，InputSystem 已内建该能力；本游戏为鼠标驱动的 UI 交互，
+> 指针/键盘事件直接走 UITK。
 
-## 旧实现（迁移输入）
+## 现状与按需路径
 
-```text
-根目录 Input/（非编译域）
-├─ IPlayerInput   轮询式接口
-│  ├─ MoveDirection / MousePosition
-│  ├─ IsClickTriggered / BackpackToggleTriggered
-│  └─ Enable() / Disable()
-├─ PlayerInput    InputSystem 生成类占位
-│  ├─ IInputActionCollection2 stub（未实现成员抛 NotImplementedException）
-│  ├─ 构造时 Resources.Load<InputActionAsset>("PlayerInput")
-│  └─ PlayerActions 占位类（真实成员由 InputSystem 生成）
-└─ PlayerInputManager : IPlayerInput
-   ├─ 事件回调 → 帧状态（Move / Click / MousePosition / BackpackToggle）
-   └─ ResetFrameFlags()   每帧 Tick 末尾重置帧级标志
-```
-
-## 目标形态（feat-003 D5）
-
-```text
-Assets/CardGame/Runtime/Input/（CardGame.Runtime）
-├─ IPlayerInput / PlayerInputManager 迁入
-└─ PlayerInput 用真实 .inputactions 生成版本替换
-   （现有 InputSystem_Actions.inputactions 位于 Assets/CardGame/Settings/）
-```
-
-## 关键决策
-
-- 输入属游戏业务（Move/Click/Backpack 是游戏语义），不进框架（D5）。
-- 轮询模型：View 每帧读 `IPlayerInput` 状态；帧级标志由管理器在 Tick 末尾重置。
-
-## 已知限制
-
-- `PlayerInput.cs` 为占位：成员与 `.inputactions` 资产未对齐，不可直接使用，需生成替换。
-- 未接入 Boot 的输入系统修复（FixEventSystemInputModules）验证。
-- 触摸支持（EnhancedTouch）在旧 Boot 中启用，迁移时需确认归属（游戏侧）。
+- 输入资产：`Assets/CardGame/Settings/InputSystem_Actions.inputactions`（游戏输入的唯一来源）。
+- 类型化包装类（Generate C# Class）：**首个输入消费者出现时**再从 `.inputactions` 生成进 `CardGame.Runtime`。
+  模板动作集对当前游戏无语义，提前生成即占位代码——与 UpdateRunner 同一「按需」原则
+  （见 [03-lifecycle.md](03-lifecycle.md) 退役说明与决策规格问题 2）。
+- 若将来做重映射 UI：直接用 InputSystem 内建的 `InputActionRebinding`，不自建抽象层。
+- 归属边界：任何输入代码只进 `Assets/CardGame/`，不回框架。

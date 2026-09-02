@@ -1,9 +1,9 @@
 # Boot / Lifecycle 简化决策（开放问题 #8）
 
-**状态：** 待决策（v2，按"技术深度优先"基准修订）
+**状态：** 已决策并执行（2026-09-02，全按建议）
 **日期：** 2026-09-02
 **关联：** feat-003（blocked 于本决策）· [09-ui-resources.md](../../design/09-ui-resources.md) 简化建议节 · [03-lifecycle.md](../../design/03-lifecycle.md) · [05-boot.md](../../design/05-boot.md)
-**决策方式：** 在文末决策记录表逐项填写，回复确认后执行
+**决策结果：** Q1 A / Q2 A / Q3 A / Q4 A / Q5 A1 / Q6 认可 / Q7 照此执行（用户确认"其余全部按建议"）
 
 ---
 
@@ -340,14 +340,26 @@ CardGame.Tests.EditMode  ✅ 测试
 
 ## 5. 决策记录表（请填写）
 
-| # | 问题 | 你的选择 |
+| # | 问题 | 决策 |
 |---|---|---|
-| 1 | 初始化/启动语义（A 构造即初始化+显式启动点 / B 轻量两阶段层 / C 完整重写旧引擎） | |
-| 2 | 逐帧驱动机制（A 不建通用 runner、记录替代路径 / B 现在建 / C 不留记录） | |
-| 3 | composition root（A Runtime+现在写最小真实版 / B 框架程序集 / C Runtime+延后写） | |
-| 4 | 注册方式（A 代码 / B SO Installer） | |
-| 5 | 场景策略（A1 单场景+流程驱动作用域 / A2 极简多场景 / B 通用 Runner） | |
-| 6 | 最终程序集图 | ☐ 认可 ☐ 有修改（注明） |
-| 7 | Input 执行方式 | ☐ 照此执行 ☐ 有异议（注明） |
+| 1 | 初始化/启动语义 | **A** 构造即初始化 + 显式启动点 |
+| 2 | 逐帧驱动机制 | **A** 不建通用 runner，保留核验与替代路径 |
+| 3 | composition root | **A** CardGame.Runtime + 立即写最小真实版 |
+| 4 | 注册方式 | **A** 直接写代码 |
+| 5 | 场景策略 | **A1** 单场景 + 流程驱动作用域 |
+| 6 | 最终程序集图 | **认可** |
+| 7 | Input 执行方式 | **照此执行**（含一处执行期修正，见执行记录） |
 
-填写后回复确认（或直接说"全部按建议"），我按第 4 节清单执行。
+## 6. 执行记录（2026-09-02）
+
+- 删除根目录 `Lifecycle/`（8 文件）、`Boot/`（5 文件）、`Input/`（3 文件）；Harness 的模块边界遍历检查替换为旧源码缺席检查。
+- composition root 落地：`CardGame.Runtime/Bootstrap/`——`GameBootstrap`（Bootstrap 场景唯一入口，持有数据 TextAsset）
+  → `GameComposition`（定义 RunScope/EncounterScope + 代码注册 DataRepository/GameFlow + 显式启动）
+  → `GameFlow`（占位流程服务）；`GameDataCatalog` 删除，数据访问收敛为容器解析；
+  Bootstrap 场景已挂载入口并绑定 8 个样例 JSON（编辑器脚本接线后删除）。
+- 测试：`GameCompositionTests`（单例解析 / Run→Encounter 作用域层级与祖先服务 / 显式启动屏障语义 / 释放后 ContainerDisposed）。
+- 文档：03-lifecycle / 05-boot / 06-input 转退役或方向记录；01-di 吸收 §1.2 切实性论证；
+  07-cardgame 吸收 §1.1 战斗引擎方向与结构更新；design README / CONTRACT / DESIGN-REVIEW / README / AGENTS 同步。
+- **执行期修正（Q7）**：调查发现 CardGame.Runtime 并无 PlayerInput 占位（占位在已删除的根 `Input/` 内）；
+  类型化包装类按"首个输入消费者出现时再从 InputSystem_Actions.inputactions 生成"处理（与 Q2 同一按需原则），
+  已记录于 06-input.md。Q7 其余内容（删抽象层、输入归游戏侧）照常执行。

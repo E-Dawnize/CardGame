@@ -852,12 +852,10 @@ project-root/
 │
 ├── Assets/
 │   ├── Plugins/
-│   │   └── RazorFramework/            ← 通用框架
+│   │   └── RazorFramework/            ← 通用框架（DI / Events / Unity DI 适配）
 │   │       ├── DI/
-│   │       ├── Lifecycle/
 │   │       ├── Events/
-│   │       ├── Input/
-│   │       └── Boot/
+│   │       └── Unity/DI/
 │   │
 │   ├── Scripts/
 │   │   ├── Game/                      ← 游戏层代码

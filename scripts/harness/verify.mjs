@@ -412,41 +412,27 @@ async function checkUnityProjectHost() {
   pass("CardGame Unity project host validated");
 }
 
-async function checkCSharpBoundaries() {
-  const modules = new Map([
-    ["Lifecycle", "RazorFramework.Lifecycle"],
-    ["Input", "RazorFramework.Input"],
-    ["Boot", "RazorFramework.Boot"]
-  ]);
-  let count = 0;
-
-  for (const [module, namespaceName] of modules) {
-    let files;
+async function checkLegacyRootSourcesAbsent() {
+  const legacyRoots = ["Lifecycle", "Boot", "Input"];
+  let found = 0;
+  for (const root of legacyRoots) {
+    let legacyFiles;
     try {
-      files = await walk(path.join(ROOT, module), ".cs");
-    } catch {
-      fail("Source module is missing: " + module + "/");
+      legacyFiles = await walk(path.join(ROOT, root), ".cs");
+    } catch (error) {
+      if (error.code !== "ENOENT") {
+        fail("Unable to inspect legacy root " + root + "/: " + error.message);
+      }
       continue;
     }
-
-    for (const file of files) {
-      count += 1;
+    for (const file of legacyFiles) {
       const relative = path.relative(ROOT, file).replaceAll("\\", "/");
-      const value = await readFile(file, "utf8");
-      const code = value
-        .replace(/\/\*[\s\S]*?\*\//g, "")
-        .replace(/^\s*\/\/.*$/gm, "");
-      const namespacePattern = new RegExp(
-        "\\bnamespace\\s+" + namespaceName.replaceAll(".", "\\.") + "(?:\\.|\\s*\\{)"
-      );
-      if (!namespacePattern.test(code)) {
-        fail(relative + " is outside namespace " + namespaceName);
-      }
+      fail("Legacy root " + root + " source must be absent: " + relative);
+      found += 1;
     }
   }
-
-  if (count > 0) {
-    pass("C# module boundaries checked (" + count + " files)");
+  if (found === 0) {
+    pass("Legacy root Lifecycle/Boot/Input sources are absent");
   }
 }
 
@@ -844,7 +830,7 @@ async function main() {
   await checkUnityProjectHost();
   await checkPureCSharpDiBoundary();
   await checkPureCSharpEventsBoundary();
-  await checkCSharpBoundaries();
+  await checkLegacyRootSourcesAbsent();
   await checkLegacyRootMvvmAbsent();
   checkGitDiff();
 

@@ -3,7 +3,8 @@
   "rootNamespace": "CardGame.Tests.EditMode",
   "references": [
     "CardGame.Domain",
-    "CardGame.Runtime"
+    "CardGame.Runtime",
+    "RazorFramework.DI"
   ],
   "includePlatforms": [
     "Editor"

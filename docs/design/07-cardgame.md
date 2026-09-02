@@ -1,16 +1,19 @@
 # CardGame — 游戏层与数据契约
 
-> 位置：`Assets/CardGame/` · 状态：✅ 骨架已就位（feat-005）；数据基础已落地（feat-006 in-progress），玩法未开始
-> 目标运行时程序集：`CardGame.Runtime`（Unity，refs 框架，feat-003 Task 5 建立）
+> 位置：`Assets/CardGame/` · 状态：✅ 骨架（feat-005）· 数据基础（feat-006）· composition root（feat-003，2026-09-02）已落地，玩法未开始
+> 运行时程序集：`CardGame.Runtime`（Unity，refs Domain + RazorFramework.DI）
 
 ## 结构
 
 ```text
 Assets/CardGame/
-├─ Scenes/Bootstrap.unity          启动场景（构建列表唯一场景）
+├─ Scenes/Bootstrap.unity          唯一场景（单场景形态）：URP 模板组件 + GameBootstrap 入口
 ├─ Runtime/
 │  ├─ CardGame.Domain/    纯 C# 数据模型/DTO 映射/校验/文案生成（noEngineReferences，feat-006）
-│  └─ CardGame.Runtime/   Unity 侧 JsonUtility 加载 + GameDataCatalog（refs Domain，feat-006）
+│  └─ CardGame.Runtime/   Unity 侧运行时（refs Domain + RazorFramework.DI，feat-003 起）
+│     ├─ Data/            JsonUtility 序列化接缝 + GameDataLoader
+│     └─ Bootstrap/      composition root：GameBootstrap（场景入口）/ GameComposition（组合根）/
+│                        GameFlow（显式启动）/ Scopes（RunScope + EncounterScope 标记）
 ├─ Content/Data/          配置数据 JSON（cards/relics/enemies/status/events/dialogues/world/ui-strings）
 ├─ Settings/
 │  ├─ UniversalRP.asset / Renderer2D.asset / DefaultVolumeProfile.asset
@@ -19,7 +22,8 @@ Assets/CardGame/
 │  └─ Lit2DSceneTemplate.scenetemplate / URP2DSceneTemplate.unity   场景模板
 └─ Tests/EditMode/（CardGame.Tests.EditMode，Editor only）
    ├─ ProjectFoundationTests   项目身份 + Bootstrap 构建场景配置
-   └─ Data/                    协议测试（枚举/映射/序列化/校验/文案/加载/样例自证）
+   ├─ Data/                    协议测试（枚举/映射/序列化/校验/文案/加载/样例自证）
+   └─ Bootstrap/               组合根测试（作用域层级 / 数据注入 / 显式启动 / 释放语义）
 ```
 
 ## 数据管线工作原理
@@ -77,14 +81,29 @@ flowchart TD
 字段、类型与约束以 `docs/CONTRACT.md` 为唯一契约（现作为 JSON 的 schema 规范）；字段变更必须同步该文档。
 存储形态由 ScriptableObject 改为 JSON（2026-08-30 定案，见 [09-ui-resources.md](09-ui-resources.md)）；CONTRACT 的协作流程与文件结构节随数据管线定案更新。
 
+## 战斗引擎方向（既定输入，2026-09-02 定调）
+
+复杂度预算集中在领域层（效果/状态结算顺序、单局状态与存档、地图生成、无头平衡模拟、UI 呈现同步），
+具体方向在战斗引擎功能启动时细化为独立 spec：
+
+- **伤害管线服务（Damage Pipeline，DI 注入）**：伤害计算走显式管线（修饰按既定顺序应用），
+  作为服务注册进容器、遭遇级注入战斗引擎——EncounterScope 的第一个未来消费者；
+  composition root 已预留其注册位。
+- **实体属性组件（运行时数据计算 + 脏标记 + 修饰器模式）**：实体属性 = 基础值 + 修饰器栈
+  （状态/遗物/临时效果挂修饰器）；派生值运行时计算并打脏标记，计算留在领域层，呈现层脏标记驱动刷新。
+- **对局序列化/日志化地基**：持久数据（基础值 + 修饰器来源）与派生数据（运行时重算）天然分离——
+  存档只序列化前者；事件/伤害审计与回放可在管线各阶段埋点。
+- **纯 C# 路线**：战斗引擎（含无头模拟能力）不依赖 UnityEngine，支持蒙特卡洛自对弈
+  （构造注入 IDamagePipeline / IRng / IEventCenter / DataRepository，模拟器注入确定性 RNG 与 fixture）。
+
 ## 关键决策与不变量
 
-- 游戏玩法规则不得进入 RazorFramework（框架只服务通用机制：DI/Events/Lifecycle/Boot）。
+- 游戏玩法规则不得进入 RazorFramework（框架只服务通用机制：DI/Events；Lifecycle/Boot/MVVM 已退役，见 03/05/04）。
 - 新增玩法脚本、资源、场景与配置只放在 `Assets/CardGame/` 或明确的子目录。
 - 框架与游戏的边界（输入、启动细节）由 feat-003 D5 确定：游戏专属细节一律在 `CardGame.Runtime`。
 
 ## 已知限制
 
-- 无玩法实现：卡牌、战斗、地图、叙事、存档、文案均未开始（配置表数据协议已由 feat-006 落地）。
+- 无玩法实现：卡牌、战斗、地图、叙事、存档、文案均未开始（数据协议 feat-006 与 composition root feat-003 已落地；战斗引擎方向见下节）。
 - 场景运行时流程未验证（仅项目身份与构建配置有 EditMode 覆盖）。
 - Excel → JSON 转换器未开始（协议先行，转换器为下一功能）。

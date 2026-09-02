@@ -2,40 +2,40 @@
 
 ## 当前状态
 
-- `feat-006 CardGame Data Foundation` 处于 `in-progress`：代码/样例/测试/文档齐备，**Unity EditMode 112 测试全部通过**，剩提交 .meta 与关闭功能。
-- `feat-003` 转 `blocked`（等 09 开放问题 #8：Lifecycle/Boot 简化拍板）；**MVVM 退役子项已于 2026-09-02 完成**（旧源码删除 + harness 检查 + 文档同步）。
+- **无 in-progress 功能**：feat-006（数据基础）与 feat-003（程序集边界重塑）均已关闭（feature_list 全同步）。
+- 2026-09-02 决策规格（docs/superpowers/specs/2026-09-02-lifecycle-boot-simplification-design.md）已**全部执行完毕**：
+  旧框架根目录源码（DI/Events/MVVM/Lifecycle/Boot/Input）全部删除，框架收敛为 DI / Events / Unity.DI；
+  composition root 落地 `CardGame.Runtime/Bootstrap/`（GameBootstrap → GameComposition → GameFlow）；
+  单场景形态确立（Bootstrap 场景挂 GameBootstrap，绑定 8 个样例 JSON）。
 
-## 已完成内容（2026-09-02 会话）
+## 本会话已完成（feat-003 执行，2026-09-02）
 
-- **feat-006 验证与修复**：首跑 Unity batchmode EditMode 4 个测试失败，逐一定位根因并修复：
-  1. `GameDataLoader.cs`：`TextAsset.name` 不含 `.json` 扩展名导致加载键不匹配（SampleContent 2 测试）；修复为键规范化补扩展名。
-  2. `DtoMapper.cs`（MapEffects）：JsonUtility 缺失 `condition` 键时仍实例化嵌套类 → 幻影条件误报；修复为以 `condition.type` 非空判定。定位手段：`-executeMethod` 探针（临时文件已删除）。
-  3. `JsonSerializationTests.cs`：JsonUtility 语义为缺失字符串 → null、缺失 List → 空列表；修正 `effects` 断言。
-  4. `Dtos.cs`：顶部语义注释同步为 JsonUtility 实际行为。
-- **feat-003 的 MVVM 退役**（用户选定方案 A）：
-  - 删除根目录 `MVVM/` 全部 5 个旧源码文件。
-  - `scripts/harness/verify.mjs`：modules map 移除 MVVM + 新增 `checkLegacyRootMvvmAbsent`（要求根 `MVVM/` 无任何 C#）。
-  - 文档同步：README、docs/design/README、07-cardgame、CONTRACT、legacy-framework-audit 移除 MVVM 引用；04-mvvm.md 新增「保留模式：INPC 基类（留待后续按需使用）」节，留存 `ObservableObject`/`SetProperty` 形态供面板层未来按需实现。
-  - feature_list.json：feat-003 首条 doneCriteria 标注 MVVM 移除完成。
+- 删除根目录 Lifecycle/（8）/Boot/（5）/Input/（3）；verify.mjs 的模块边界遍历替换为三类旧源码缺席检查。
+- 新增 `CardGame.Runtime/Bootstrap/`：Scopes.cs（RunScope/EncounterScope 标记）、GameComposition.cs（组合根）、
+  GameFlow.cs（占位流程服务）、GameBootstrap.cs（场景入口）；`GameDataCatalog` 删除（数据访问收敛为容器解析）；
+  CardGame.Runtime.asmdef 与测试 asmdef 增加 RazorFramework.DI 引用。
+- 新增 `Tests/EditMode/Bootstrap/GameCompositionTests.cs`（4 测试）；SampleContentTests 提取 LoadSampleAssets。
+- Bootstrap 场景：挂载 GameBootstrap + 绑定 8 个数据资产（临时 executeMethod 脚本已删除）。
+- 文档：03/05 转退役存档、06 转方向记录、01-di/07-cardgame 吸收决策论证、design README / CONTRACT /
+  DESIGN-REVIEW / HARNESS / README / AGENTS 同步；决策规格填入决策表与执行记录。
 
 ## 最新验证证据
 
 | 检查 | 结果 |
 |---|---|
-| Unity batchmode EditMode（--full） | **通过**：112/112，harness 29 项 0 失败 0 警告 |
+| Unity batchmode EditMode（--full） | **通过**：116/116，harness 29 项 0 失败 0 警告 |
 | 便携 Harness（bun） | 通过：28 项，1 个预期便携模式警告（本机无 node） |
 | Harness 测试套件 | 通过：45/45 |
 | git diff --check | 干净 |
 
 ## 已知限制
 
-- 3 个未跟踪目录 .meta（`Assets/CardGame/Content.meta`、`Runtime.meta`、`Tests/EditMode/Data.meta`）待提交；`ProjectSettings/EditorBuildSettings.asset` 仅有 LF/CRLF 行尾差异（内容无改动）。
-- IL2CPP/AOT 未验证；玩法本体未实现；Excel → JSON 转换器未开始。
-
-- **设计文档配套 UML 图**：`01-di.md`（3 张：构建校验/作用域解析/释放顺序）、`07-cardgame.md`（1 张：数据管线，新增「数据管线工作原理」节）、`02-events.md`（1 张：快照分发时序）。Mermaid 内嵌，均已渲染验证。
+- IL2CPP/AOT 未验证；玩法本体未实现；GameFlow 为占位（新局/遭遇作用域将由未来流程状态机驱动）；
+  输入包装类按需生成（06-input.md）；Excel→JSON 转换器未开始。
+- Unity 重存场景可能再次产生 `m_Name: ` 行尾空格，提交前 `git diff --check` 并修正新增行。
 
 ## 下一可执行步
 
-1. 提交：feat-006 修复（4 文件）+ MVVM 删除（5 文件）+ 文档/harness 同步 + 3 个目录 .meta（建议同时提交 EditorBuildSettings.asset 行尾规范化）。
-2. 更新 feature_list.json 将 feat-006 置为 done（证据：112 EditMode 全绿 + 便携 27 项）。
-3. feat-003 剩余依赖：Lifecycle/Boot 简化待拍板（09 开放问题 #8）。
+1. 提交本批变更（feat-003 执行：代码 + 场景 + harness + 文档 + 状态）。
+2. 与用户确定下一个功能：战斗引擎最小切片（决策规格 §1.1）/ Excel→JSON 转换器（开放问题 #3）/ UI spike（开放问题 #1）。
+3. 顺带评估 feat-004（Unity Test Host）：其目标已由 feat-005/006 实质满足，建议降级为文档性结论或关闭。

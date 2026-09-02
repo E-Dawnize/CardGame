@@ -11,12 +11,11 @@ CardGame 是一个基于 Unity 的叙事肉鸽卡牌项目。它以分支地图�
 | `Assets/Plugins/RazorFramework/Unity/DI/` | Unity 对象成员注入适配器 | 只能依赖 DI 核心和 Unity；不把 Unity 规则倒灌进核心 |
 | `Assets/Plugins/RazorFramework/Tests/EditMode/` | DI V2 与 Unity 适配器的 EditMode 测试 | 新行为先由测试表达，再修改实现 |
 | `Packages/`、`ProjectSettings/` | Unity 版本、包版本、项目身份与构建场景 | 改动后必须运行 Harness；不记录本机临时路径 |
-| 根目录 `Boot/`、`Input/`、`Lifecycle/` | 尚未迁入的旧 RazorFramework 源码 | 不进入当前 Unity 编译范围，也不添加 CardGame 玩法代码 |
 | `scripts/harness/` 与状态文档 | 可重复验证、功能状态和协作交接 | 结构契约变更必须同时更新测试与说明 |
 
 ## DI V2 使用方式
 
-`RazorFramework.DI` 是 CardGame 当前唯一的 DI 实现；根目录 `DI/` 不允许存在任何 C# 实现。容器通过 `ContainerBuilder` 注册服务并在 `Build()` 后冻结。构建阶段会验证重复注册、构造函数可选性、缺失依赖、依赖环、作用域定义和生命周期穿透，因此不应在运行中修改注册表。结构化异常的 `DependencyPath` 会保留间接 captive、兄弟作用域、集合冲突和运行时缺少作用域的类型链。
+`RazorFramework.DI` 是 CardGame 当前唯一的 DI 实现；旧框架源码已全部删除，Harness 以缺席检查守卫（任何旧源码回流即失败）。容器通过 `ContainerBuilder` 注册服务并在 `Build()` 后冻结。构建阶段会验证重复注册、构造函数可选性、缺失依赖、依赖环、作用域定义和生命周期穿透，因此不应在运行中修改注册表。结构化异常的 `DependencyPath` 会保留间接 captive、兄弟作用域、集合冲突和运行时缺少作用域的类型链。
 
 ```csharp
 var builder = new ContainerBuilder();

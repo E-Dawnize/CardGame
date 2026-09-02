@@ -41,7 +41,7 @@ node --test scripts/harness/tests/*.test.mjs
 - `Assets/Plugins/RazorFramework/DI/` 的每个 C# 文件必须属于 `RazorFramework.DI`，且不得出现实际代码中的 `UnityEngine` 引用；扫描覆盖点号和 `global ::` 周围的合法空白、注释，以及插值表达式；普通注释和字符串不误报；
 - `RazorFramework.DI.asmdef` 必须固定 `name`、`rootNamespace`、空 `references`、`autoReferenced: true` 和 `noEngineReferences: true`；若 feat-003 改变显式引用策略，必须先更新规格和测试；
 - DI V2 中文规格与实施计划不得出现连续大量 `?`、重复 replacement character 或异常低的中文内容；正常中文问号不会触发该门禁；
-- 其余尚未迁入的根目录 RazorFramework 模块的命名空间边界；
+- 根目录旧框架源码的缺席检查：`DI/`、`Events/`、`MVVM/`、`Lifecycle/`、`Boot/`、`Input/` 下递归不得存在任何 `.cs`（2026-09-02 决策后旧源码已全部删除，Harness 守卫不回流）；
 - CardGame Unity 宿主：Unity `6000.3.10f1`、`E-Dawnize / CardGame` 身份、`com.edawnize.cardgame`、四个关键包，以及第一个启用的 Bootstrap 场景；
 - `git diff --check`。
 

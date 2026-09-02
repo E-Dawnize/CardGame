@@ -2,7 +2,8 @@
   "name": "CardGame.Runtime",
   "rootNamespace": "CardGame.Runtime",
   "references": [
-    "CardGame.Domain"
+    "CardGame.Domain",
+    "RazorFramework.DI"
   ],
   "autoReferenced": false
 }

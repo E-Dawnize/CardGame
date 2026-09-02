@@ -1,6 +1,6 @@
 # CardGame 协作指南
 
-CardGame 是一个可运行的 Unity 项目，固定使用 Unity `6000.3.10f1`。项目只服务于 CardGame 的叙事肉鸽卡牌体验。根目录保留的 RazorFramework 源码是后续重构输入，不是本阶段的 Unity 编译对象。
+CardGame 是一个可运行的 Unity 项目，固定使用 Unity `6000.3.10f1`。项目只服务于 CardGame 的叙事肉鸽卡牌体验。旧 RazorFramework 根目录源码（DI/Events/MVVM/Lifecycle/Boot/Input）已全部删除；框架只剩 DI / Events / Unity.DI（位于 `Assets/Plugins/RazorFramework/`），由 Harness 缺席检查守卫。
 
 ## 开始前
 
@@ -32,7 +32,7 @@ CardGame 是一个可运行的 Unity 项目，固定使用 Unity `6000.3.10f1`�
 |---|---|---|
 | `Assets/CardGame/` | CardGame 场景、脚本、资源、配置和 EditMode 测试 | 未审计的旧框架迁移品、生成缓存 |
 | `Packages/`、`ProjectSettings/` | 经审阅的包与项目配置 | 临时本机路径、凭据、生成解决方案 |
-| 根目录旧 RazorFramework 模块 | 只读重构输入与既有静态边界检查对象 | 新的玩法规则、事件、场景和美术常量 |
+| 根目录（已无旧源码） | 旧 RazorFramework 源码已全部删除；Harness 缺席检查守卫 | 不得把任何旧框架源码迁回仓库根目录 |
 | `scripts/harness/`、状态文档 | 可重复验证、任务状态和交接信息 | 绕过验证的临时开关、密钥 |
 
 不要把 CardGame 的玩法、叙事事件、场景内容或美术常量加入旧框架目录。若要将框架迁入 `Assets/Plugins/RazorFramework/`，必须建立独立功能、先写测试并在 Unity 中验证。

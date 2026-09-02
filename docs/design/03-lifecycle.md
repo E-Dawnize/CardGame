@@ -1,8 +1,16 @@
 # Lifecycle — 生命周期引擎
 
-> 旧实现：根目录 `Lifecycle/`（非编译域，引用已删除的 DI V1 API）
-> 目标程序集：`RazorFramework.Lifecycle`（纯 C#）＋ `RazorFramework.Unity.Lifecycle`（Unity，refs DI/Lifecycle/Unity.DI）
-> 状态：⏳ 迁移中（feat-003 Task 3 未开始） · 重写输入而非机械迁移
+> **状态：🚫 已退役（2026-09-02）** —— 生命周期引擎不实施；本文件转为历史存档
+> 决策评估见 [2026-09-02 决策规格](../../superpowers/specs/2026-09-02-lifecycle-boot-simplification-design.md) 问题 1/2：
+> 两阶段引擎本质上是针对 DI V1「注入时机不定」弱点的补偿结构；DI V2 构造注入消解根因后，
+> 初始化/启动语义由「构造即初始化 + 显式启动点」承载（composition root：Build → Resolve → Start，
+> 已落地为 GameComposition / GameFlow）。若将来 ≥2 个真实服务需要「全图构造完、零副作用窗口」，
+> 按决策规格中方案 B（约 30 行轻量两阶段层）升级——A 是 B 的子集，升级平滑。
+> UpdateRunner 不迁移：「替代 Unity 原生 Update」的四条原始理由经逐条核验均不成立；
+> 替代路径 = UITK scheduler（每帧动效）/ 战斗引擎动作队列（连贯节奏）/ 逻辑步进（无头模拟）。
+> 处置：根目录旧 `Lifecycle/` 源码已于 2026-09-02 删除；不建 Lifecycle 相关程序集。
+>
+> 以下为退役前的历史内容（旧实现与已废弃目标形态），仅存档不再维护。
 
 ## 旧实现（迁移输入）
 
