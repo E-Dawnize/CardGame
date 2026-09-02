@@ -4,8 +4,9 @@ using System.Collections.Generic;
 namespace CardGame.Domain
 {
     // DTO 层：JSON 磁盘形态（JsonUtility 兼容——公开字段、无 Dictionary、枚举为字符串）。
-    // 规则：可选字符串省略或 null；可选 int 用哨兵值（NextLineIndex -1、MaxStack -1、Cooldown 0）；
-    // 缺失列表键反序列化为 null，映射层统一空值合并。
+    // JsonUtility 实际语义：缺失字符串 → null；缺失 List → 空列表；缺失嵌套类 → 实例化（字段为默认值）。
+    // 映射层统一把 null/空视为“未提供”：可选 int 用哨兵值（NextLineIndex -1、MaxStack -1、Cooldown 0）；
+    // 缺失 condition 以 type 非空判定（见 DtoMapper.MapEffects）。
     // 自动生成字段（CardDef.Description / EffectEntry.Description / EnemyIntent.PreviewText）不出现在 DTO。
 
     /// <summary>cards.json 根包装。</summary>

@@ -69,9 +69,11 @@ namespace CardGame.Tests.EditMode
             Assert.That(card.cost, Is.Zero);
             Assert.That(card.damage, Is.Zero);
             Assert.That(card.block, Is.Zero);
+            // JsonUtility 语义：缺失字符串 → null；缺失 List → 空列表（非 null）。
             Assert.That(card.type, Is.Null);
             Assert.That(card.cardClass, Is.Null);
-            Assert.That(card.effects, Is.Null);
+            Assert.That(card.effects, Is.Not.Null);
+            Assert.That(card.effects.Count, Is.Zero);
             Assert.That(card.upgradeToId, Is.Null);
         }
 

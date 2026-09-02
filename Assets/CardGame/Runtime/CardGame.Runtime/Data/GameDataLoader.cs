@@ -40,7 +40,11 @@ namespace CardGame.Runtime
                 foreach (var asset in assets)
                 {
                     if (asset == null) continue;
-                    rawByFileName[asset.name] = asset.text;
+                    // Unity 的 TextAsset.name 不含扩展名（如 "cards"），需补回 .json 以匹配约定文件名。
+                    var fileName = asset.name.EndsWith(".json", StringComparison.Ordinal)
+                        ? asset.name
+                        : asset.name + ".json";
+                    rawByFileName[fileName] = asset.text;
                 }
             }
             return Load(rawByFileName);

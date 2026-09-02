@@ -460,7 +460,9 @@ namespace CardGame.Domain
                     continue;
                 }
                 ConditionEntry condition = null;
-                if (dto.condition != null)
+                // JsonUtility 在 JSON 缺失 condition 键时也会实例化嵌套类（type 为空串），
+                // 因此必须以 type 非空判定“确实声明了条件”，避免幻影条件与误报错误。
+                if (dto.condition != null && !string.IsNullOrEmpty(dto.condition.type))
                 {
                     condition = new ConditionEntry(
                         Parse(EnumMaps.ConditionTypeMap, dto.condition.type, file, id, "condition.type", ConditionType.HasStatus, sink),
