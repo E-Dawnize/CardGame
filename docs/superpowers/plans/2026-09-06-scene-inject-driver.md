@@ -154,7 +154,7 @@ git commit -m "feat: wire game test assembly into Unity member injection seam"
 - Test: `Assets/CardGame/Tests/EditMode/Bootstrap/SceneInjectionTests.cs`（追加）
 
 **Interfaces:**
-- Consumes: Task 1 的测试类型与装配线；`UnityObjectInjector(IServiceResolver).Inject(UnityEngine.Object)`；`Object.FindObjectsByType<MonoBehaviour>(FindObjectsInactive.IncludeInactive, FindObjectsSortMode.None)`。
+- Consumes: Task 1 的测试类型与装配线；`UnityObjectInjector(IServiceResolver).Inject(UnityEngine.Object)`；`Object.FindObjectsByType<MonoBehaviour>(FindObjectsInactive.Include, FindObjectsSortMode.None)`。
 - Produces: `public static void SceneInjection.InjectScene(IServiceResolver resolver)`（`CardGame.Runtime` 命名空间）——Task 3 的 GameBootstrap 调用它；测试类型 `RunState`/`MissingRequiredComponent`/`ScopedWantingComponent` 供 Task 3 复用。
 
 - [ ] **Step 1: 写失败的测试（追加到 SceneInjectionTests.cs；5 个）**
@@ -320,7 +320,7 @@ namespace CardGame.Runtime
         {
             var injector = new UnityObjectInjector(resolver);
             var behaviours = Object.FindObjectsByType<MonoBehaviour>(
-                FindObjectsInactive.IncludeInactive, FindObjectsSortMode.None);
+                FindObjectsInactive.Include, FindObjectsSortMode.None);
             foreach (var behaviour in behaviours)
             {
                 injector.Inject(behaviour);

@@ -35,7 +35,7 @@
       {
           public static void InjectScene(IServiceResolver resolver)
           // new UnityObjectInjector(resolver) +
-          // FindObjectsByType<MonoBehaviour>(FindObjectsInactive.IncludeInactive,
+          // FindObjectsByType<MonoBehaviour>(FindObjectsInactive.Include,
           //                                  FindObjectsSortMode.None) 逐个 Inject
           // 任一必需依赖缺失 → 原样抛 UnityInjectionException（fail-fast）
       }
@@ -79,7 +79,7 @@
 | # | 测试 | 背书 |
 |---|---|---|
 | T1 | 场景扫描注入 active 对象 `[Inject]` 字段，实例与容器解析同一 | 根驱动生效 |
-| T2 | inactive 对象也被注入 | IncludeInactive |
+| T2 | inactive 对象也被注入 | Include（含 inactive） |
 | T3 | `[InjectOptional]` 未注册 → 跳过不抛 | 可选语义 |
 | T4 | 必需未注册 → `MissingDependency` 且三件套字段齐全 | fail-fast |
 | T5 | 根扫描注入 Scoped 服务 → `ScopeMismatch` | 对齐法则护栏 |
