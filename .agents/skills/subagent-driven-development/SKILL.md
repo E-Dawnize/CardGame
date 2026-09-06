@@ -21,14 +21,18 @@ ledger and the tool results carry the record.
 ```dot
 digraph when_to_use {
     "Have implementation plan?" [shape=diamond];
+    "Small plan (≤3 tasks, single domain, briefs would be transcription)?" [shape=diamond];
     "Tasks mostly independent?" [shape=diamond];
     "Stay in this session?" [shape=diamond];
+    "Inline execution + one final review" [shape=box];
     "subagent-driven-development" [shape=box];
     "executing-plans" [shape=box];
     "Manual execution or brainstorm first" [shape=box];
 
-    "Have implementation plan?" -> "Tasks mostly independent?" [label="yes"];
+    "Have implementation plan?" -> "Small plan (≤3 tasks, single domain, briefs would be transcription)?" [label="yes"];
     "Have implementation plan?" -> "Manual execution or brainstorm first" [label="no"];
+    "Small plan (≤3 tasks, single domain, briefs would be transcription)?" -> "Inline execution + one final review" [label="yes"];
+    "Small plan (≤3 tasks, single domain, briefs would be transcription)?" -> "Tasks mostly independent?" [label="no"];
     "Tasks mostly independent?" -> "Stay in this session?" [label="yes"];
     "Tasks mostly independent?" -> "Manual execution or brainstorm first" [label="no - tightly coupled"];
     "Stay in this session?" -> "subagent-driven-development" [label="yes"];
@@ -41,6 +45,14 @@ digraph when_to_use {
 - Fresh subagent per task (no context pollution)
 - Review after each task (spec compliance + code quality), broad review at the end
 - Faster iteration (no human-in-loop between tasks)
+
+**Scale gate:** SDD's per-task pipeline (briefs, dispatches, task reviews,
+fix loops) costs more than it returns on small work. If the plan is small —
+≤3 tasks, single domain, and the briefs would contain complete code
+(transcription) — execute inline with executing-plans/TDD plus one final
+whole-branch review instead. Per-task dispatch earns its cost when tasks
+exercise real judgment, span multiple files with integration concerns, or
+need isolated context.
 
 ## The Process
 
@@ -260,6 +272,16 @@ final whole-branch review. Never skip the task review, and never accept a
 report missing either verdict — spec compliance AND task quality are both
 required. Implementer self-review never replaces the task review; both are
 needed.
+
+**Transcription tasks review mechanically.** When the brief contains the
+complete code to write, the implementer made no choices — the only review
+question is fidelity, and the task review becomes a mechanical check rather
+than a model dispatch: diff the landed code against the brief's code blocks,
+and confirm the report names the covering tests and their output. This is
+the task review, not a skip. Judgment (quality, architecture, spec fit) is
+carried by the final whole-branch review, which runs regardless — a model
+review on a transcription diff verifies that text was copied; spend that
+judgment where choices were made.
 
 - Hand the reviewer its diff as a file: run this skill's
   `scripts/review-package PLAN_FILE BASE HEAD` and pass the reviewer the file path

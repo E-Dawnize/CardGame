@@ -7,7 +7,7 @@ description: Use when you have a spec or requirements for a multi-step task, bef
 
 ## Overview
 
-Write comprehensive implementation plans assuming the engineer has zero context for our codebase and questionable taste. Document everything they need to know: which files to touch for each task, code, testing, docs they might need to check, how to test it. Give them the whole plan as bite-sized tasks. DRY. YAGNI. TDD. Frequent commits.
+Write comprehensive implementation plans assuming the engineer has zero context for our codebase and questionable taste. Document everything they need to know: which files to touch for each task, exact interfaces and values, testing, docs they might need to check, how to test it. Give them the whole plan as bite-sized tasks. DRY. YAGNI. TDD. Frequent commits.
 
 Assume they are a skilled developer, but know almost nothing about our toolset or problem domain. Assume they don't know good test design very well.
 
@@ -21,6 +21,8 @@ Assume they are a skilled developer, but know almost nothing about our toolset o
 ## Scope Check
 
 If the spec covers multiple independent subsystems, it should have been broken into sub-project specs during brainstorming. If it wasn't, suggest breaking this into separate plans — one per subsystem. Each plan should produce working, testable software on its own.
+
+**Scale the plan to the task.** Estimate implementation size from the spec before writing: new/changed lines, domains crossed. If small — roughly ≲300 lines of new/changed implementation in one domain, a handful of files, finishable in one implementer sitting — write a lean plan: interfaces, invariants, test intents, and per-step verification commands; execute inline (TDD directly, or executing-plans) with one final review instead of a per-task pipeline. A plan whose process apparatus (task briefs, per-task reviews, orchestration) would cost more than the implementation itself is a plan defect, not rigor.
 
 ## File Structure
 
@@ -125,15 +127,21 @@ git commit -m "feat: add specific feature"
 ```
 ````
 
+**Verification cadence:** scale test runs to their cost. When the full suite takes minutes (engine batch runs, device farms), the red step only requires the failure observed — a predicted compile error confirmed by the compiler's own output satisfies red; the green run carries the full-suite evidence. Prefer one or two full-suite runs per branch (final task, then the merged result) over per-task full runs.
+
 ## No Placeholders
 
 Every step must contain the actual content an engineer needs. These are **plan failures** — never write them:
 - "TBD", "TODO", "implement later", "fill in details"
 - "Add appropriate error handling" / "add validation" / "handle edge cases"
 - "Write tests for the above" (without actual test code)
-- "Similar to Task N" (repeat the code — the engineer may be reading tasks out of order)
-- Steps that describe what to do without showing how (code blocks required for code steps)
+- "Similar to Task N" (repeat the content — the engineer may be reading tasks out of order)
+- Implementation steps that specify no behavior or constraints ("add the scanner" with nothing else)
 - References to types, functions, or methods not defined in any task
+
+**What must be verbatim in a plan:** interfaces and exact signatures later tasks consume, configuration values and magic strings, test cases (names and assertions), commands, and commit messages. These cause integration drift when improvised, so the plan pins them.
+
+**What must not be pre-written:** full implementation bodies for code the plan author cannot compile while writing the plan. Unverified plan code acquires false authority — implementers transcribe it instead of consulting reality, and API-surface mistakes in the plan text (wrong enum member, wrong type name) surface as compile errors that force deviation-adjudication mid-execution. Describe behavior and constraints instead ("the scan includes inactive objects", "the guard rethrows, never swallows"), and let the implementer write the body at the keyboard where the compiler corrects it in seconds. Complete code in a plan is legitimate only where the author is deliberately specifying an algorithm (novel logic, tricky concurrency) — mark such blocks as reference, with the tests as the authority.
 
 ## Self-Review
 
@@ -153,9 +161,9 @@ After saving the plan, offer execution choice:
 
 **"Plan complete and saved to `docs/superpowers/plans/<filename>.md`. Two execution options:**
 
-**1. Subagent-Driven (recommended)** - I dispatch a fresh subagent per task, review between tasks, fast iteration
+**1. Subagent-Driven** - I dispatch a fresh subagent per task, review between tasks, fast iteration — recommended for multi-task plans where implementers exercise judgment
 
-**2. Inline Execution** - Execute tasks in this session using executing-plans, batch execution with checkpoints
+**2. Inline Execution** - Execute tasks in this session using executing-plans, batch execution with checkpoints — recommended for small plans (see Scope Check) and transcription-heavy plans
 
 **Which approach?"**
 
