@@ -375,7 +375,7 @@ git commit -m "feat: add SceneInjection root driver for scene member injection"
         public void GameBootstrap_RunsBeforeAllOtherSceneScripts()
         {
             var attribute = typeof(GameBootstrap)
-                .GetCustomAttribute<DefaultExecutionOrderAttribute>();
+                .GetCustomAttribute<DefaultExecutionOrder>();
 
             Assert.That(attribute, Is.Not.Null);
             Assert.That(attribute.order, Is.LessThanOrEqualTo(-30000));
