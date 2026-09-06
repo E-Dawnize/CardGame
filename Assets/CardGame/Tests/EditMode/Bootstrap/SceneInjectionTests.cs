@@ -1,4 +1,5 @@
 using System;
+using System.Reflection;
 using CardGame.Runtime;
 using NUnit.Framework;
 using RazorFramework.DI;
@@ -31,6 +32,12 @@ namespace CardGame.Tests.EditMode.Bootstrap
 
         private sealed class ScopedWantingComponent : MonoBehaviour
         {
+            [Inject] public RunState State;
+        }
+
+        private sealed class ScopeSeamComponent : MonoBehaviour
+        {
+            [Inject] public ISceneService Service;
             [Inject] public RunState State;
         }
 
@@ -165,6 +172,42 @@ namespace CardGame.Tests.EditMode.Bootstrap
                 var component = gameObject.GetComponent<InjectableComponent>();
                 Assert.That(component.Optional, Is.Null);
                 Assert.That(component.Service, Is.Not.Null);
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(gameObject);
+            }
+        }
+
+        [Test]
+        public void GameBootstrap_RunsBeforeAllOtherSceneScripts()
+        {
+            // Unity 6 将特性类型命名为 UnityEngine.DefaultExecutionOrder（无 Attribute 后缀），
+            // C# 特性用法 [DefaultExecutionOrder(N)] 不变。
+            var attribute = typeof(GameBootstrap)
+                .GetCustomAttribute<DefaultExecutionOrder>();
+
+            Assert.That(attribute, Is.Not.Null);
+            Assert.That(attribute.order, Is.LessThanOrEqualTo(-30000));
+        }
+
+        [Test]
+        public void Injector_FromRunScope_ResolvesScopedAndSingletonMembers()
+        {
+            var builder = new ContainerBuilder();
+            builder.DefineScope<RunScope>();
+            builder.AddSingleton<ISceneService, SceneService>();
+            builder.AddScoped<RunState, RunScope>();
+            using var container = builder.Build();
+            using var runScope = container.CreateScope<RunScope>();
+            var gameObject = new GameObject("scope-seam");
+            var component = gameObject.AddComponent<ScopeSeamComponent>();
+            try
+            {
+                new UnityObjectInjector(runScope).Inject(component);
+
+                Assert.That(component.Service, Is.SameAs(container.Resolve<ISceneService>()));
+                Assert.That(component.State, Is.SameAs(runScope.Resolve<RunState>()));
             }
             finally
             {
