@@ -56,3 +56,10 @@
    或 Excel/Markdown → JSON 转换器（开放问题 #3）；或 UI 层 spike（开放问题 #1）。
 2. feature_list 已全部同步：feat-001/002/003/005/006 done，feat-004（Unity Test Host）待重估——
    其目标已由 feat-005/006 实质满足，建议降级为文档性结论或关闭。
+
+## 追加：技能规模分级修订（2026-09-06，会话内决策）
+
+- **背景**：feat-007 复盘确认「小任务大投入」（562 行计划 vs 265 行实现、11 次子代理派发、6 次评审仅 1 条实质 finding、计划内未编译代码的两个 API 笔误获得虚假权威）。
+- **修订**（commit 73f7e71）：`writing-plans` 增加规模分级（小规格 → lean 计划 + inline 执行 + 单次终审）、「必须逐字钉接口/值/测试/命令，不得预写无法编译的实现体」、昂贵套件的验证节奏；`subagent-driven-development` 的 When-to-Use 增加规模门（小计划走 inline）+ 转录任务用机械保真核对替代模型评审。
+- **验证**：harness 28/0（技能完整性门禁不受内容编辑影响）；writing-skills 流程按真实事故为 RED 基线，6 个全新上下文微测 5/6 达标，REFACTOR 收紧文件数谓词为行数谓词后复测收敛。
+- **注意**：`.agents/skills/` 与 vendored `third_party/superpowers` v6.2.0 从此存在**有意的本地分歧**（用户授权）；升级上游时需重放本修订。
