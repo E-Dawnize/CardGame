@@ -90,6 +90,20 @@ Flow = Container.Resolve<GameFlow>();                  // ← 运行期查表激
 
 `noEngineReferences: true` 由 asmdef 强制，Harness 还做 token 级检查：`DI/` 下任何 `.cs` 不得出现 `UnityEngine` 记号。**依赖方向单向**：核心不知道 Unity 存在，适配层引用核心。
 
+*图示：程序集依赖方向与门禁。实线 = 编译期引用（箭头指向被引用方）；虚线 = Harness 门禁检查。核心（DI）不知道 Unity 存在。*
+
+```mermaid
+flowchart LR
+    UDI["RazorFramework.Unity.DI<br/>Unity 适配层<br/>autoReferenced: false"] -->|"引用核心"| DI["RazorFramework.DI<br/>纯 C# · noEngineReferences: true"]
+    RT["CardGame.Runtime<br/>组合根 / 数据加载<br/>autoReferenced: false"] -->|"引用"| DI
+    RT -->|"引用"| DOM["CardGame.Domain<br/>纯 C# 契约 · noEngineReferences: true"]
+    TST["CardGame.Tests.EditMode<br/>仅 Editor"] -->|"引用"| RT
+    TST -->|"引用"| DOM
+    TST -->|"引用"| DI
+    DI -.->|"Harness token 级检查<br/>不得出现 UnityEngine 记号"| HC["门禁"]
+    DOM -.->|"同上（asmdef 强制）"| HC
+```
+
 ### 2.2 核心文件与各自职责
 
 | 文件 | 可见性 | 一句话职责 |
@@ -122,6 +136,22 @@ Flow = Container.Resolve<GameFlow>();                  // ← 运行期查表激
 ---
 
 ## 3. 数据模型：每一条注册从注册期到运行期的形态
+
+*图示：主线 A —— 一条注册从「注册期 → 构建期 → 运行期」的三形态。同一份逻辑在三处有不同载体：可变条目、不可变计划、运行期查表。*
+
+```mermaid
+flowchart LR
+    subgraph P1["① 注册期（Build 之前 · 可变）"]
+        A["ContainerBuilder<br/>AddSingleton&lt;GameFlow&gt;()"] --> R["ServiceRegistration<br/>ServiceType / ImplementationType<br/>Lifetime / ScopeType<br/>ExternalInstance · Id"]
+    end
+    subgraph P2["② 构建期（Build() · 一次性校验）"]
+        R --> V["DependencyGraphValidator<br/>五组校验"] --> M["ContainerBuildModel<br/>只读冻结 · Plans 按 Id"]
+    end
+    subgraph P3["③ 运行期（Resolve · 零决策）"]
+        M --> P["ActivationPlan<br/>构造器 + Dependencies<br/>RequiredScopeType / Path"]
+        P --> X["LifetimeOwner<br/>缓存 + 归属记账"]
+    end
+```
 
 ### 3.1 注册期：`ServiceRegistration`
 
@@ -273,6 +303,17 @@ private ContainerBuilder AddType(
 
 ---
 
+*图示：builder 状态机（§4 三个纪律）。只有 Build() 全部校验通过才冻结；失败不消耗 builder，补注册后可重试。*
+
+```mermaid
+flowchart TD
+    S["builder（可变阶段）<br/>Add* / DefineScope"] -->|"Build()"| CHK{"五组校验"}
+    CHK -->|"全部通过"| FRZ["_consumed = true<br/>ServiceContainer 冻结"]
+    CHK -->|"任一失败"| ERR["DependencyInjectionException<br/>builder 未消耗"]
+    ERR -->|"补上缺失注册后重试"| S
+    FRZ -.->|"再次 Add* / Build()"| GUARD["InvalidOperationException<br/>EnsureMutable() 守卫"]
+```
+
 ## 5. 构建期校验：DependencyGraphValidator 五组检查逐组走读
 
 `DependencyGraphValidator.Build` 是纯静态入口，串行执行五步（每步失败即抛结构化 `DependencyInjectionException`，见第 11 章）：
@@ -292,6 +333,19 @@ public static ContainerBuildModel Build(
 
     return new ContainerBuildModel(...);
 }
+```
+
+*图示：Build() 五组校验流水线（① → ⑤-b 串行；任一步失败即抛结构化异常并终止，不再继续后续步骤）。*
+
+```mermaid
+flowchart TD
+    IN["注册列表 + scope 定义<br/>（快照复制）"] --> S1["① 默认注册唯一<br/>DuplicateRegistration"]
+    S1 --> S2["② 集合分组<br/>按 ServiceType · 保序"]
+    S2 --> S3["③ scope 树<br/>重复定义 / 父未定义 / 环<br/>InvalidScopeDefinition"]
+    S3 --> S4["④ 激活计划<br/>InvalidImplementation<br/>AmbiguousConstructor"]
+    S4 --> S5["⑤-a 依赖图 DFS<br/>MissingDependency<br/>CircularDependency"]
+    S5 --> S6["⑤-b 生命周期<br/>CaptiveDependency<br/>ScopeMismatch"]
+    S6 --> OUT["ContainerBuildModel（冻结）"]
 ```
 
 ### 5.1 ① 默认注册唯一 → `DuplicateRegistration`
@@ -439,6 +493,16 @@ private static void Visit(ServiceRegistration registration, ...)
 它做两件事：
 1. 对每条注册（含经 Transient、集合传递的间接依赖）算出"激活它需要哪个 scope 在场"——即 `RequiredScopeType` 与 `RequiredScopePath`；
 2. 沿依赖图自底向上合并，凡出现以下三种违规立即抛错。
+
+*图示：§6.4 的间接捕获示例。Scoped 叶子先产生需求，需求沿 Transient 逐层上溯并延长路径，最终在 Singleton 处被截获 → Build() 即抛。*
+
+```mermaid
+flowchart TD
+    RS["RunState<br/>Scoped · 锚 RunScope"] -->|"需求 (RunScope, [RunState])"| TN["TransientNeedsRun<br/>Transient"]
+    TN -->|"Transient 继承需求 + 前插自身<br/>→ (RunScope, [TransientNeedsRun, RunState])"| SN["SingletonNeedsTransient<br/>Singleton"]
+    SN -->|"依赖需求非空 且 自身是 Singleton"| THROW["Build() 抛 CaptiveDependency"]
+    THROW --> PATH["DependencyPath =<br/>[SingletonNeedsTransient, TransientNeedsRun, RunState]"]
+```
 
 ### 6.2 核心递归：`DetermineRequiredScope`
 
@@ -654,6 +718,23 @@ private object ResolveRegistration(ServiceRegistration registration, ServiceScop
 }
 ```
 
+*图示：ResolveRegistration 的运行期分派决策树（分支号与正文逐条对应）。外部实例（分支 0）不经过任何构造、缓存与归属。*
+
+```mermaid
+flowchart TD
+    ENTRY["ResolveRegistration(reg, scope, path)"] --> Q1{"IsExternal？"}
+    Q1 -->|"是"| B0["分支 0：返回 ExternalInstance<br/>不构造 · 不缓存 · 不归属"]
+    Q1 -->|"否"| Q2{"RequiredScopeType 在场？<br/>scope.FindAncestor(...)"}
+    Q2 -->|"否"| B05["分支 0.5：抛 ScopeMismatch"]
+    Q2 -->|"是"| Q3{"按 Lifetime 分支"}
+    Q3 -->|"Singleton"| B1["_rootOwner.GetOrCreate<br/>激活 scope = null"]
+    Q3 -->|"Transient"| B2["解析处 owner.CreateTransient<br/>激活 scope = 当前"]
+    Q3 -->|"Scoped"| B3["anchor.Owner.GetOrCreate<br/>激活 scope = 锚定 scope"]
+    B1 --> CI["CreateInstance<br/>按构造参数序逐依赖递归"]
+    B2 --> CI
+    B3 --> CI
+```
+
 逐分支解读：
 
 - **分支 0（外部实例）**：`AddSingleton(instance)` 注册的服务不经过任何缓存与构造——永远返回同一个外部对象。它也不归属任何 owner（调用方负责释放），见第 9 章。
@@ -755,6 +836,26 @@ public object CreateTransient(Func<object> factory)
 
 ## 8. 作用域层级：创建规则与祖先查找
 
+*图示：scope 定义树（类型，构建期）与运行期实例树必须同构；FindAncestor 沿父链查找决定服务可见性。同一标记可有多个并存实例（两局 Run）。*
+
+```mermaid
+flowchart TD
+    subgraph DEF["构建期 · 类型树（ScopeParents）"]
+        RC["RunScope 标记"] --> EC["EncounterScope 标记"]
+    end
+    subgraph RUN["运行期 · 实例树"]
+        ROOT["ServiceContainer"] --> R1["ServiceScope（Run 局 A）"]
+        ROOT --> R2["ServiceScope（Run 局 B）"]
+        R1 --> E1["ServiceScope（Encounter 战斗 1）"]
+        R1 --> E2["ServiceScope（Encounter 战斗 2）"]
+        R2 --> E3["ServiceScope（Encounter 战斗 3）"]
+    end
+    E1 -.->|"FindAncestor(Run) → R1<br/>可解析 Run 锚定服务"| R1
+    E2 -.->|"FindAncestor(Run) → R1<br/>同局战斗共享局级实例"| R1
+    E3 -.->|"FindAncestor(Run) → R2<br/>局 B 不共享局 A 实例"| R2
+    R1 -.->|"FindAncestor(Encounter) = null<br/>父不能解析子 scope 服务"| E1
+```
+
 ### 8.1 `CreateScope` 的校验链
 
 `ServiceScope.CreateScope<TScope>()` / `ServiceContainer.CreateScope<TScope>()` 都委托给容器内部的 `CreateChildScope(parent, scopeType)`：
@@ -830,6 +931,21 @@ scope 实例树与对象归属的关系：**一个 `ServiceScope` 实例 = 一�
 
 **外部实例永不进 `_ownedInstances`**：`AddSingleton(instance)` 走注册分支 0 直接返回对象，owner 的 `Track` 只在 `GetOrCreate`/`CreateTransient` 的"新构造"路径被调用，外部实例从不过这条路径。
 
+*图示：归属与释放（§9.1）。每条容器创建/scope 解析的实例都挂某 owner 并记账；外部实例从不过 owner 的 Track 路径，容器只存引用、由调用方负责释放。*
+
+```mermaid
+flowchart TD
+    RO["根 _rootOwner"] -->|"容器创建 Singleton"| A1["容器 Dispose 时释放"]
+    O1["Run scope 实例 Owner"] -->|"Run 锚定 Scoped"| A2["该 scope Dispose 时释放"]
+    O2["Encounter scope 实例 Owner"] -->|"Encounter 锚定 Scoped"| A3["该 scope Dispose 时释放"]
+    O3["发起解析的 scope / 根 owner"] -->|"Transient"| A4["所在 scope / 容器释放"]
+    EXT["外部实例 AddSingleton(instance)"] -.->|"不 Track · 不进 _ownedInstances<br/>调用方负责释放"| NONE["（不入账）"]
+    A1 --> ORDER["逆序释放：依赖者先于被依赖者"]
+    A2 --> ORDER
+    A3 --> ORDER
+    A4 --> ORDER
+```
+
 ### 9.2 三份 Dispose，同一模式
 
 `ServiceContainer.Dispose`、`ServiceScope.Dispose`、`LifetimeOwner.Dispose` 结构完全一致：**锁内幂等快照 → 锁外逆序释放 → 聚合错误 → 最后才抛**。
@@ -890,6 +1006,15 @@ private object ResolveCollection(Type serviceType, ServiceScope scope, IList<Typ
         result.SetValue(ResolveRegistration(registrations[index], scope, path), index);
     return result;
 }
+```
+
+*图示：集合注入的保序链路（§10.1）。注册序 → CollectionRegistrations 分组保序 → ResolveCollection 按下标逐个解析 → ResolveAll 数组保序。类型名与测试语义一致（接口名示意）。*
+
+```mermaid
+flowchart LR
+    REG["注册序<br/>AddCollectionSingleton&lt;IPlugin, First&gt;()<br/>AddCollectionTransient&lt;IPlugin, Second&gt;()"] --> GRP["CollectionRegistrations[IPlugin]<br/>[First, Second]（保序）"]
+    GRP --> RES["ResolveCollection<br/>按下标逐个 ResolveRegistration"] --> ARR["ResolveAll&lt;IPlugin&gt;()<br/>→ [First, Second]"]
+    DF["默认注册<br/>AddSingleton&lt;IPlugin, DefaultPlugin&gt;()"] -->|"Resolve&lt;IPlugin&gt;() 单独解析"| ONE["DefaultPlugin 单例"]
 ```
 
 语义（测试均在 `CollectionAndDiagnosticsTests.cs`）：
@@ -1010,6 +1135,21 @@ internal static void EnsureCurrent()
 
 此后 `EnsureCurrent()` 是纯读检查：未初始化（比如测试环境没走 Unity 初始化）或当前线程 ≠ 捕获线程 → **fail-closed**（宁可抛错，不碰对象）。`InitializeForTests` 仅供 EditMode 测试在 `[SetUp]` 里自建主线程身份。
 
+*图示：UnityMainThread 两个 [RuntimeInitializeOnLoadMethod] 钩子建立的主线程捕获时序（§13.2）。Unity 保证 SubsystemRegistration 先于 BeforeSceneLoad，因此「先清残留、再锁身份」的次序是确定的。*
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant U as Unity 运行时
+    participant M as UnityMainThread
+
+    U->>M: SubsystemRegistration 钩子<br/>ResetRuntimeState()
+    Note over M: Volatile.Write(threadId, 0)<br/>清空域重载残留状态
+    U->>M: BeforeSceneLoad 钩子<br/>CaptureRuntimeThread()
+    Note over M: Interlocked.CompareExchange(0 → 当前线程 id)<br/>已被占用则抛 WrongThread（身份不可替换）
+    Note over M: 此后 EnsureCurrent() 只读校验<br/>未初始化 / 线程不符 → WrongThread（fail-closed）
+```
+
 ### 13.3 UnityObjectInjector：成员计划
 
 构造与每次 `Inject` 都先 `UnityMainThread.EnsureCurrent()`，然后：
@@ -1069,7 +1209,23 @@ while (hierarchy.Count > 0)
 | 非索引、有 setter 的**实例**属性 | 索引器 / 无 setter / static setter | `IndexerTarget` / `GetOnlyPropertyTarget` / `StaticPropertyTarget` |
 | 只能字段/属性 | 方法、事件等 | 代码注释明确 |
 
-注意私有字段/私有 setter 是**允许**的（测试 `BaseTarget` 用私有字段 `[Inject]`），因为 `DeclaredMembers` 含 `NonPublic` 且 `FieldInfo.SetValue` / `PropertyInfo.SetValue`（`GetSetMethod(true)` 取非 public setter）都能工作。整个注入失败集被缓存：若类型定义非法，首次注入抛 `InvalidMember` 并缓存，后续同类型注入不再重复构建计划。
+注意私有字段/私有 setter 是**允许**的（测试 `BaseTarget` 用私有字段 `[Inject]`），因为 `DeclaredMembers` 含 `NonPublic` 且 `FieldInfo.SetValue` / `PropertyInfo.SetValue`（`GetSetMethod(true)` 取非 public setter）都能工作。
+
+*图示：UnityObjectInjector.Inject 决策流（§13.3）。主线程 fail-closed 守护在入口；成员计划按类型缓存一次；解析/赋值失败各有独立错误码。*
+
+```mermaid
+flowchart TD
+    INJ["Inject(target)"] --> MT["UnityMainThread.EnsureCurrent()<br/>线程不符 → WrongThread"]
+    MT --> QN{"target == null 或已 Destroy？"}
+    QN -->|"是"| NOOP["安全 no-op 返回"]
+    QN -->|"否"| PLAN["取/建成员计划（类型缓存 Lazy）<br/>基类 → 派生类 · MetadataToken 序"]
+    PLAN --> MBR{"逐成员 TryResolve(ServiceType)"}
+    MBR -->|"可选且未注册"| SKIP["跳过"]
+    MBR -->|"必需且未注册"| MISS["UnityInjectionException<br/>MissingDependency<br/>（TargetType / MemberName / ServiceType）"]
+    MBR -->|"解析成功"| ASGN["Assign(target, service)<br/>失败 → AssignmentFailed（保留 InnerException）"]
+```
+
+整个注入失败集被缓存：若类型定义非法，首次注入抛 `InvalidMember` 并缓存，后续同类型注入不再重复构建计划。
 
 **当前无消费者**：UI/输入层尚未接入，注入器是"将来视图接 DI 的预留通道"（`docs/design/README.md` 全局风险 3 与 code-reading-order 第 18 项）。所以改动它前务必先补 UnityObjectInjectorTests 类测试。
 
@@ -1123,6 +1279,33 @@ private void OnDestroy() { _composition?.Dispose(); _composition = null; }
 - **业务服务（GameFlow）**：纯 C#，构造注入 `DataRepository`，通过显式 `Start()` 跨越"构造完成"与"开始交互"的屏障。
 
 测试背书在 `GameCompositionTests.cs`：单例共享（`Build_RegistersDataAndFlowAsSingletons`）、层级解析（`ScopeHierarchy_RunThenEncounter_ResolvesAncestorServices`）、显式启动屏障（`StartFlow_SetsWorldTitleOnlyAfterExplicitStart`：Start 前 `WorldTitle` 为 null）、释放后拒用（`Resolve_AfterDispose_ThrowsContainerDisposed`）。
+
+*图示：组合根装配时序（§14.1）。外部实例（DataRepository）由 GameBootstrap 在 Awake 里先装配好再传入——对象就绪先于任何 Resolve；GameFlow 构造时经分支 0 原样取回。*
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant Boot as GameBootstrap (MonoBehaviour)
+    participant Ld as GameDataLoader
+    participant Comp as GameComposition
+    participant B as ContainerBuilder
+    participant Cont as ServiceContainer
+    participant Flow as GameFlow
+
+    Boot->>Ld: Awake() → LoadRepository()<br/>（读 8 个 TextAsset）
+    Ld-->>Boot: DataRepository（校验 + 冻结）
+    Boot->>Comp: new GameComposition(data)
+    Comp->>B: DefineScope&lt;RunScope&gt;()
+    Comp->>B: DefineScope&lt;EncounterScope, RunScope&gt;()
+    Comp->>B: AddSingleton(data)<br/>（外部实例：不构造 / 不 Dispose）
+    Comp->>B: AddSingleton&lt;GameFlow&gt;()
+    B->>B: Build() 五组校验 → 冻结
+    Comp->>Cont: Resolve&lt;GameFlow&gt;()
+    Cont->>Cont: 解析依赖 DataRepository<br/>→ 分支 0 原样取回外部实例
+    Cont-->>Comp: GameFlow 实例
+    Boot->>Flow: StartFlow()（显式启动屏障）
+    Note over Boot,Comp: OnDestroy → Comp.Dispose() → Container.Dispose()<br/>外部实例不在容器账内，归组合根本人所有
+```
 
 ### 14.2 怎么新增一个服务（遭遇级示例）
 
