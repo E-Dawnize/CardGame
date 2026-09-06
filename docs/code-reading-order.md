@@ -89,7 +89,7 @@ flowchart TB
 - **先跑后读**：读第 1 站前，在 Unity 里跑一次 EditMode 的 `GameCompositionTests`（或直接进 Play 模式），建立"运行中发生了什么"的直觉。
 - **对照 UML 图**：第 2 站对照 [07-cardgame.md](design/07-cardgame.md) 的「数据管线工作原理」流程图；第 3 站对照 [01-di.md](design/01-di.md) 的三张图（构建校验流程 / 作用域解析时序 / 释放顺序）——图是这些文件行为的摘要。
 - **测试先行原则**：读实现前先扫对应测试的测试名（[Assets/Plugins/RazorFramework/Tests/EditMode/](../Assets/Plugins/RazorFramework/Tests/EditMode/) 与 [Assets/CardGame/Tests/EditMode/](../Assets/CardGame/Tests/EditMode/)），等于先看契约再看实现。
-- **何时可以停**：只想用框架（写玩法）→ 读完第 1、2 站即可；要改 DI 行为 → 才需要第 3 站全部；要接 UI/输入 → 第 4 站第 18 项。
+- **何时可以停**：只想用框架（写玩法）→ 读完第 1、2 站即可；要改 DI 行为 → 才需要第 3 站全部；要接 UI/输入 → 第 4 站第 19 项。
 
 ## 覆盖范围与边界
 
