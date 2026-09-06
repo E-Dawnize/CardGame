@@ -97,9 +97,11 @@ flowchart LR
     UDI["RazorFramework.Unity.DI<br/>Unity 适配层<br/>autoReferenced: false"] -->|"引用核心"| DI["RazorFramework.DI<br/>纯 C# · noEngineReferences: true"]
     RT["CardGame.Runtime<br/>组合根 / 数据加载<br/>autoReferenced: false"] -->|"引用"| DI
     RT -->|"引用"| DOM["CardGame.Domain<br/>纯 C# 契约 · noEngineReferences: true"]
+    RT -->|"引用"| UDI
     TST["CardGame.Tests.EditMode<br/>仅 Editor"] -->|"引用"| RT
     TST -->|"引用"| DOM
     TST -->|"引用"| DI
+    TST -->|"引用"| UDI
     DI -.->|"Harness token 级检查<br/>不得出现 UnityEngine 记号"| HC["门禁"]
     DOM -.->|"同上（asmdef 强制）"| HC
 ```
@@ -1352,7 +1354,7 @@ DI 行为测试放 `Assets/Plugins/RazorFramework/Tests/EditMode/DI/`（改核�
 
 ### 14.5 何时不要扩展
 
-- 视图/UITK 面板是薄消费者：**不进容器建图**（原生生命周期 + presenter 引用），`UnityObjectInjector` 是将来接 UI 的预留通道而非现在必须。
+- 视图/UITK 面板是薄消费者：**不进容器建图**（原生生命周期 + presenter 引用）。`UnityObjectInjector` 已被 `SceneInjection` 根驱动启用（§13.3 驱动现状）；UI 面板本身仍是将来消费者，接入时再补接线。
 - 单实现且无替身预期的服务：不注册，直接 new。
 - 难度/种子等模式差异：用**数据表达**，不改注册图。
 - 动 DI 核心行为前：先补测试再改实现；核心不得出现 `UnityEngine` 记号（Harness token 级检查）。

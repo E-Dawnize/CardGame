@@ -39,7 +39,7 @@
 |---|---|---|
 | Unity EditMode（batchmode） | `UNITY_EDITOR=... verify.mjs --full` | **通过**：124/124（含 8 个新 SceneInjectionTests；XML total=124 passed=124 failed=0），harness 29 项 0 失败 0 警告 |
 | 便携 Harness | `bun scripts/harness/verify.mjs` | 通过：28 项 0 失败 1 个预期便携模式警告（本机无 node，用 bun 运行） |
-| Harness 测试套件 | `bun test scripts/harness/tests/` | 通过：45/45 |
+| Harness 测试套件 | `bun test scripts/harness/tests/` | 通过：45/45（2026-09-06 修复波实跑确认：45 pass / 0 fail） |
 | git diff --check | 经 harness 内置检查 | 干净 |
 
 ## 已知限制与后续边界

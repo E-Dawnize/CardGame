@@ -1,7 +1,7 @@
 # CardGame — 游戏层与数据契约
 
 > 位置：`Assets/CardGame/` · 状态：✅ 骨架（feat-005）· 数据基础（feat-006）· composition root（feat-003，2026-09-02）已落地，玩法未开始
-> 运行时程序集：`CardGame.Runtime`（Unity，refs Domain + RazorFramework.DI）
+> 运行时程序集：`CardGame.Runtime`（Unity，refs Domain + RazorFramework.DI + RazorFramework.Unity.DI）
 
 ## 结构
 
@@ -10,10 +10,11 @@ Assets/CardGame/
 ├─ Scenes/Bootstrap.unity          唯一场景（单场景形态）：URP 模板组件 + GameBootstrap 入口
 ├─ Runtime/
 │  ├─ CardGame.Domain/    纯 C# 数据模型/DTO 映射/校验/文案生成（noEngineReferences，feat-006）
-│  └─ CardGame.Runtime/   Unity 侧运行时（refs Domain + RazorFramework.DI，feat-003 起）
+│  └─ CardGame.Runtime/   Unity 侧运行时（refs Domain + RazorFramework.DI + RazorFramework.Unity.DI，feat-003 起）
 │     ├─ Data/            JsonUtility 序列化接缝 + GameDataLoader
 │     └─ Bootstrap/      composition root：GameBootstrap（场景入口）/ GameComposition（组合根）/
-│                        GameFlow（显式启动）/ Scopes（RunScope + EncounterScope 标记）
+│                        GameFlow（显式启动）/ Scopes（RunScope + EncounterScope 标记）/
+│                        SceneInjection（场景 [Inject] 注入驱动）
 ├─ Content/Data/          配置数据 JSON（cards/relics/enemies/status/events/dialogues/world/ui-strings）
 ├─ Settings/
 │  ├─ UniversalRP.asset / Renderer2D.asset / DefaultVolumeProfile.asset

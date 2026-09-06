@@ -46,8 +46,8 @@ Unity 编译域 — 现状
 ├─ RazorFramework.Unity.DI.Tests ✅  [refs DI, Unity.DI]  Editor only
 ├─ RazorFramework.Events.Tests   ✅  [refs Events]  Editor only
 ├─ CardGame.Domain               ✅  纯 C# (noEngineReferences)  [BCL only]  feat-006 新增
-├─ CardGame.Runtime              ✅  [Unity, refs Domain + DI]  autoReferenced: false  composition root 所在
-└─ CardGame.Tests.EditMode       ✅  [refs Domain, Runtime, DI]  Editor only（项目身份 + 数据协议 + 组合根）
+├─ CardGame.Runtime              ✅  [Unity, refs Domain + DI + Unity.DI]  autoReferenced: false  composition root 所在
+└─ CardGame.Tests.EditMode       ✅  [refs Domain, Runtime, DI, Unity.DI]  Editor only（项目身份 + 数据协议 + 组合根）
 
 最终形态（2026-09-02 定案，决策规格问题 6）：
 ├─ 不建：Unity.Boot / Lifecycle / Unity.Lifecycle / Unity.MVVM

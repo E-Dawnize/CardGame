@@ -78,6 +78,7 @@
 
 | # | 测试 | 背书 |
 |---|---|---|
+| T0（装配线冒烟） | `Injector_FromGameTestAssembly_InjectsComponent`：最小容器 + `UnityObjectInjector` 直接注入本地 `[Inject]` 组件 | 游戏测试程序集可驱动注入器（asmdef 引用 + InternalsVisibleTo 装配线可见性） |
 | T1 | 场景扫描注入 active 对象 `[Inject]` 字段，实例与容器解析同一 | 根驱动生效 |
 | T2 | inactive 对象也被注入 | Include（含 inactive） |
 | T3 | `[InjectOptional]` 未注册 → 跳过不抛 | 可选语义 |
