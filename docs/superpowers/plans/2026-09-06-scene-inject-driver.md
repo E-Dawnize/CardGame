@@ -478,6 +478,7 @@ git commit -m "feat: drive scene member injection from GameBootstrap startup"
 **Files:**
 - Modify: `docs/design/di-internals.md`（§13.3 末段）
 - Modify: `README.md`（「Unity 对象成员注入」节）
+- Modify: `feature_list.json`（feat-007 条目）
 - Modify: `progress.md`、`session-handoff.md`
 - Modify: `docs/superpowers/specs/2026-09-06-scene-inject-driver-design.md`（状态行）
 
@@ -511,6 +512,34 @@ git commit -m "feat: drive scene member injection from GameBootstrap startup"
 
 `docs/superpowers/specs/2026-09-06-scene-inject-driver-design.md` 的 `**状态：** 已决策（2026-09-06，待实现）` 改为 `**状态：** 已决策并执行（2026-09-06）`。
 
+- [ ] **Step 3b: feature_list.json 登记 feat-007**
+
+在 `features` 数组末尾（feat-006 之后）追加：
+
+```json
+    {
+      "id": "feat-007",
+      "name": "Scene Member Injection Driver",
+      "description": "Drive UnityObjectInjector from the composition root so scene-loaded MonoBehaviours outside the container receive [Inject]/[InjectOptional] member injection at startup, with the scope-following injection seam test-backed.",
+      "dependencies": [
+        "feat-002",
+        "feat-003"
+      ],
+      "status": "done",
+      "doneCriteria": [
+        "GameBootstrap (DefaultExecutionOrder -32000) builds the composition, then injects the whole scene (including inactive) before any other script Awake/OnEnable and before StartFlow",
+        "SceneInjection is a game-side driver only; framework public surface unchanged apart from one InternalsVisibleTo line for the game EditMode test assembly",
+        "Required-missing and scoped-from-root injection failures surface at startup (MissingDependency / ScopeMismatch) with no silent degradation",
+        "Scope-following injection seam is test-backed (injector built on a RunScope resolves both scoped and singleton members)",
+        "EditMode tests cover smoke, active/inactive scan, optional skip, missing required, scoped-from-root guard, scope seam, and execution order (8 tests)",
+        "Portable and full Harness verification pass with real Unity EditMode evidence"
+      ],
+      "evidence": "（执行后填入实际命令与结果，含 EditMode 测试总数）"
+    }
+```
+
+注意：`evidence` 必须按实际运行结果填写，不得预填。
+
 - [ ] **Step 4: progress.md / session-handoff.md 更新**
 
 `progress.md`：新增「本次完成」小节（场景注入驱动：SceneInjection + GameBootstrap 接线 + InternalsVisibleTo + 8 个测试），验证证据表补一行（命令 + 实际测试数/结果）。
@@ -524,10 +553,10 @@ Expected: 便携通过；`--full` 全绿（124 EditMode 测试，0 失败）；`
 - [ ] **Step 6: Commit**
 
 ```bash
-git add "docs/design/di-internals.md" "README.md" \
+git add "docs/design/di-internals.md" "README.md" "feature_list.json" \
         "docs/superpowers/specs/2026-09-06-scene-inject-driver-design.md" \
         "progress.md" "session-handoff.md"
 git commit -m "docs: sync scene injection driver wiring into design and status docs"
 ```
 
-注意：di-internals.md 同时含早前未提交的图示扩充（同文件）——此提交会一并带上。若要与图示改动分开，先与用户确认分批方式；默认并入（同一文件无法只提交部分行，除非 `git add -p`）。
+注意：di-internals.md 的图示改动已在执行前单独提交（分支上的独立 docs commit），本提交只含本任务改动。未跟踪的 `docs/design/di-internals.html` 不属于本功能，保持未提交。
