@@ -4,7 +4,8 @@
   "references": [
     "CardGame.Domain",
     "CardGame.Runtime",
-    "RazorFramework.DI"
+    "RazorFramework.DI",
+    "RazorFramework.Unity.DI"
   ],
   "includePlatforms": [
     "Editor"
