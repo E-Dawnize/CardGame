@@ -50,6 +50,8 @@ injector.Inject(component);
 
 反射成员注入目前只在 Editor EditMode 中得到验证。IL2CPP、托管代码剥离和 AOT 构建覆盖尚未证明；上线前必须为反射访问提供 `link.xml`/保留策略并进行目标平台构建验证，或改为生成式/显式注入方案。
 
+场景驱动（2026-09-06）：`GameBootstrap` 在组合根构建完成后、`StartFlow` 之前调用 `CardGame.Runtime` 的 `SceneInjection.InjectScene`，对当前场景全部 MonoBehaviour（含 inactive）执行一次成员注入；`GameBootstrap` 以 `[DefaultExecutionOrder(-32000)]` 保证该注入先于其他脚本的 Awake/OnEnable。必需依赖未注册、或常驻场景对象注入 Scoped 服务，都会在启动期原样抛出。scope 拥有的屏由创建该 scope 的驱动方从 scope 注入（对象生命周期必须 ≤ 注入上下文生命周期）；运行时动态创建的对象由创建方显式注入。
+
 ## 验证
 
 便携验证不启动 Unity，会检查 Harness 状态、Unity 宿主结构、旧 DI 删除情况和 DI V2 的纯 C# 边界：

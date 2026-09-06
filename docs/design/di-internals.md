@@ -1227,7 +1227,7 @@ flowchart TD
 
 整个注入失败集被缓存：若类型定义非法，首次注入抛 `InvalidMember` 并缓存，后续同类型注入不再重复构建计划。
 
-**当前无消费者**：UI/输入层尚未接入，注入器是"将来视图接 DI 的预留通道"（`docs/design/README.md` 全局风险 3 与 code-reading-order 第 18 项）。所以改动它前务必先补 UnityObjectInjectorTests 类测试。
+**驱动现状（2026-09-06 起有根驱动）**：`GameBootstrap`（`[DefaultExecutionOrder(-32000)]`，Awake 全场景最先）建组合根后调用 `CardGame.Runtime` 的 `SceneInjection.InjectScene(Container)`——扫描场景全部 MonoBehaviour（含 inactive）逐个注入，先于其他脚本的 Awake/OnEnable。对齐法则：对象的生命周期必须 ≤ 注入 resolver 的生命周期；常驻场景对象只能拿 Singleton（注入 Scoped 抛 `ScopeMismatch`）；scope 拥有的屏由创建 scope 的驱动方从该 scope 注入并先于 scope 销毁（规格：`docs/superpowers/specs/2026-09-06-scene-inject-driver-design.md`）。运行时动态创建的对象不在根驱动范围——谁创建谁注入。改动注入器前务必先补 UnityObjectInjectorTests 类测试。
 
 ---
 

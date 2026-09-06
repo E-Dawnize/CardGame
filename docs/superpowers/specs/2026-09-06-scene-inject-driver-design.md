@@ -1,6 +1,6 @@
 # 场景 [Inject] 成员注入驱动设计
 
-**状态：** 已决策（2026-09-06，待实现）
+**状态：** 已决策并执行（2026-09-06）
 **日期：** 2026-09-06
 **关联：** [di-internals.md](../../design/di-internals.md) §13（Unity 适配层）· [01-di.md](../../design/01-di.md)（不切实边界）· [09-ui-resources.md](../../design/09-ui-resources.md)（战斗屏 = EncounterScope）
 **决策结果：** 注入上下文按「对象生命周期层」对齐；本切片 = 根驱动落地 + scope 接缝测试背书（用户确认方案 A）

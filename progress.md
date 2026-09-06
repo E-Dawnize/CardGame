@@ -2,11 +2,9 @@
 
 ## 当前状态
 
-**最后更新：** 2026-09-02 +08:00
-**当前功能：** 无 in-progress 功能——feat-006（数据基础）与 feat-003（程序集边界重塑）均已关闭。
-**状态：** 2026-09-02 决策（docs/superpowers/specs/2026-09-02-lifecycle-boot-simplification-design.md）已全部执行：
-旧框架根目录源码（DI/Events/MVVM/Lifecycle/Boot/Input）全部删除；框架收敛为 DI / Events / Unity.DI；
-composition root 落地 CardGame.Runtime；单场景形态确立。
+**最后更新：** 2026-09-06 +08:00
+**当前功能：** 无 in-progress 功能——feat-007（场景成员注入驱动）已关闭；此前 feat-003/006 已关闭。
+**状态：** feat-007（场景 `[Inject]` 成员注入驱动）已全部执行：场景容器外脚本的 `[Inject]`/`[InjectOptional]` 成员在启动期被 `SceneInjection.InjectScene` 真实注入。
 
 ## 本次完成：feat-003 程序集边界重塑（2026-09-02，按决策规格执行）
 
@@ -26,11 +24,20 @@ composition root 落地 CardGame.Runtime；单场景形态确立。
   （判据 + bug 发现时机表）；07-cardgame 吸收战斗引擎方向（伤害管线/属性组件/序列化地基）与结构更新；
   design README（最终程序集图/依赖方向/风险）、CONTRACT（框架子树）、DESIGN-REVIEW、README、AGENTS、HARNESS 同步。
 
+## 本次完成：feat-007 场景成员注入驱动（2026-09-06，按决策规格执行）
+
+- **问题**：`UnityObjectInjector` + `[Inject]`/`[InjectOptional]` 机制完备但无驱动——场景容器外脚本（Unity 实例化的 MonoBehaviour）的标记成员从不被赋值。
+- **落地**：`CardGame.Runtime` 新增 `SceneInjection.InjectScene(IServiceResolver)`（扫描场景全部 MonoBehaviour 含 inactive 逐个注入）；`GameBootstrap` 加 `[DefaultExecutionOrder(-32000)]` 并在 Awake 中按「建组合根 → 注入场景 → StartFlow」接线，保证注入先于其他脚本 Awake/OnEnable。
+- **框架改动**：仅 `AssemblyInfo.cs` +1 行 `InternalsVisibleTo("CardGame.Tests.EditMode")`；公开面零变化。
+- **对齐法则**：对象的生命周期 ≤ 注入 resolver 的生命周期（常驻对象仅 Singleton；scope 拥有的屏由创建 scope 的驱动方从该 scope 注入）。
+- **测试**：`SceneInjectionTests` 共 8 个（冒烟 / active+inactive 扫描 / 可选跳过 / 必需缺失 fail-fast / 根注入 Scoped 护栏 / scope 接缝 / 执行顺序）。
+- **文档同步**：di-internals §13.3 驱动现状、README 场景驱动段、规格状态、feature_list feat-007 登记。
+
 ## 验证证据
 
 | 检查 | 命令 | 实际结果 |
 |---|---|---|
-| Unity EditMode（batchmode） | `UNITY_EDITOR=... verify.mjs --full` | **通过**：116/116（含 4 个新组合根测试；XML total=116 passed=116 failed=0），harness 29 项 0 失败 0 警告 |
+| Unity EditMode（batchmode） | `UNITY_EDITOR=... verify.mjs --full` | **通过**：124/124（含 8 个新 SceneInjectionTests；XML total=124 passed=124 failed=0），harness 29 项 0 失败 0 警告 |
 | 便携 Harness | `bun scripts/harness/verify.mjs` | 通过：28 项 0 失败 1 个预期便携模式警告（本机无 node，用 bun 运行） |
 | Harness 测试套件 | `bun test scripts/harness/tests/` | 通过：45/45 |
 | git diff --check | 经 harness 内置检查 | 干净 |
